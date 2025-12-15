@@ -4,30 +4,28 @@ import FirebaseAnalytics
 import FirebaseRemoteConfig
 
 /// Singleton manager for Firebase services (Analytics and Remote Config)
-class FirebaseManager {
-    static let shared = FirebaseManager()
-    
+@objc public class FirebaseManager: NSObject {
+    @objc public static let shared = FirebaseManager()
+
     private var remoteConfig: RemoteConfig?
     private var isInitialized = false
-    
-    private init() {
-        // Private initializer for singleton pattern
+
+    private override init() {
+        super.init()
     }
-    
+
     /// Initialize Firebase services
-    func initialize() {
+    @objc public func initialize() {
         guard !isInitialized else { return }
-        
-        // Firebase is configured via GoogleService-Info.plist
-        // FirebaseApp.configure() is called automatically when the plist is present
-        // But we can ensure it's configured explicitly
+
+        // Configure Firebase if needed
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
-        
+
         // Initialize Remote Config
         remoteConfig = RemoteConfig.remoteConfig()
-        
+
         // Set default values for Remote Config
         let defaults: [String: NSObject] = [
             "enable_ads": true as NSObject,
@@ -38,18 +36,18 @@ class FirebaseManager {
             "maintenance_mode": false as NSObject
         ]
         remoteConfig?.setDefaults(defaults)
-        
+
         // Configure Remote Config settings
         let settings = RemoteConfigSettings()
         settings.minimumFetchInterval = 3600 // Fetch at most once per hour
         remoteConfig?.configSettings = settings
-        
+
         // Fetch Remote Config values
         fetchRemoteConfig()
-        
+
         isInitialized = true
     }
-    
+
     /// Fetch Remote Config values from Firebase
     private func fetchRemoteConfig() {
         remoteConfig?.fetch { [weak self] (status, error) in
@@ -66,33 +64,27 @@ class FirebaseManager {
             }
         }
     }
-    
+
     /// Log an analytics event
     /// - Parameters:
     ///   - name: Event name
-    ///   - parameters: Optional event parameters (dictionary of String keys to Any values). Defaults to empty dictionary.
-    func logEvent(_ name: String, parameters: [String: Any]? = nil) {
+    ///   - parameters: Optional event parameters
+    @objc public func logEvent(_ name: String, parameters: [String: Any]? = nil) {
         Analytics.logEvent(name, parameters: parameters)
     }
-    
+
     /// Get a Remote Config value as String
-    /// - Parameter key: Remote Config key
-    /// - Returns: String value or empty string if not found
-    func getRemoteConfigString(_ key: String) -> String {
+    @objc public func getRemoteConfigString(_ key: String) -> String {
         return remoteConfig?.configValue(forKey: key).stringValue ?? ""
     }
-    
+
     /// Get a Remote Config value as Bool
-    /// - Parameter key: Remote Config key
-    /// - Returns: Bool value or false if not found
-    func getRemoteConfigBool(_ key: String) -> Bool {
+    @objc public func getRemoteConfigBool(_ key: String) -> Bool {
         return remoteConfig?.configValue(forKey: key).boolValue ?? false
     }
-    
+
     /// Get a Remote Config value as Number
-    /// - Parameter key: Remote Config key
-    /// - Returns: NSNumber value or 0 if not found
-    func getRemoteConfigNumber(_ key: String) -> NSNumber {
+    @objc public func getRemoteConfigNumber(_ key: String) -> NSNumber {
         return remoteConfig?.configValue(forKey: key).numberValue ?? 0
     }
 }
