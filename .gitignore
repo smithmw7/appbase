@@ -16,21 +16,19 @@ container/ios/App/Podfile.lock
 container/ios/App/*.xcworkspace/xcuserdata/
 container/ios/App/*.xcodeproj/xcuserdata/
 container/ios/App/*.xcodeproj/project.xcworkspace/
+container/ios/App/.swiftpm/
 container/ios/App/DerivedData/
-container/ios/App/.DS_Store
 
 # Android
 container/android/.gradle/
 container/android/build/
-container/android/app/build/
 container/android/.idea/
 container/android/local.properties
-container/android/.DS_Store
+*.apk
+*.aab
 
 # Capacitor
-container/.capacitor/
-container/ios/App/App/public/
-container/ios/App/App/capacitor.config.json
+.capacitor/
 
 # Environment variables
 .env
@@ -43,30 +41,31 @@ container/ios/App/App/capacitor.config.json
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-logs/
-*.log
 
 # Firebase
 .firebase/
 firebase-debug.log
 firestore-debug.log
+ui-debug.log
+
+# Logs
+logs/
+*.log
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
 
-# Task Master
-.taskmaster/tasks/tasks.json
-.taskmaster/reports/
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.pem
+*.key
