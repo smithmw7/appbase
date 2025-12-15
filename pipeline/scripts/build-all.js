@@ -19,7 +19,7 @@ if (!target) {
   process.exit(1);
 }
 
-const validTargets = ['hello', 'debug', 'main'];
+const validTargets = ['hello', 'debug', 'main', 'word-strike'];
 if (!validTargets.includes(target)) {
   console.error(`Invalid target: ${target}`);
   console.error(`Valid targets: ${validTargets.join(', ')}`);

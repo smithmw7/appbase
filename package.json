@@ -17,13 +17,15 @@
     "configure:hello": "node pipeline/scripts/configure-ios.js hello",
     "configure:debug": "node pipeline/scripts/configure-ios.js debug",
     "configure:main": "node pipeline/scripts/configure-ios.js main",
-    "install:all": "npm install && npm install --workspace=container && npm install --workspace=content/hello && npm install --workspace=content/debug && npm install --workspace=content/main",
+    "configure:word-strike": "node pipeline/scripts/configure-ios.js word-strike",
+    "install:all": "npm install && npm install --workspace=container && npm install --workspace=content/hello && npm install --workspace=content/debug && npm install --workspace=content/main && npm install --workspace=content/word-strike",
     "firebase:login": "npx firebase-tools login",
     "firebase:use": "npx firebase-tools use com-hightopgames-firebase",
     "firebase:remoteconfig": "npx firebase-tools remoteconfig:publish firebase-remote-config.template.json",
     "firebase:apps": "npx firebase-tools apps:list IOS",
     "firebase:download-config": "npx firebase-tools apps:sdkconfig IOS 1:74002814264:ios:9d080eec9bb5da1c76ddcd > container/ios/App/App/GoogleService-Info.plist",
-    "firebase:deploy-remoteconfig": "npx firebase-tools deploy --only remoteconfig"
+    "firebase:deploy-remoteconfig": "npx firebase-tools deploy --only remoteconfig",
+    "build:word-strike": "node pipeline/scripts/build-all.js word-strike"
   },
   "devDependencies": {
     "firebase-tools": "^13.0.0",

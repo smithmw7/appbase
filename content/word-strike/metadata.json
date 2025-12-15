@@ -1,0 +1,5 @@
+{
+  "name": "Word Strike",
+  "description": "A solitaire word puzzle game where you overwrite letters to clear your rack.",
+  "requestFramePermissions": []
+}

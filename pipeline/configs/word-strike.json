@@ -1,0 +1,8 @@
+{
+  "bundleId": "com.puzzleapp.wordstrike",
+  "appName": "Puzzle App Word Strike",
+  "iconPath": "pipeline/assets/icons/main",
+  "contentDir": "content/word-strike",
+  "firebaseConfig": "container/ios/App/App/GoogleService-Info.plist",
+  "enableAds": true
+}
