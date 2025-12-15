@@ -1,0 +1,25 @@
+{
+  "name": "@puzzle-app/container",
+  "version": "1.0.0",
+  "description": "Capacitor iOS native container for puzzle app",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "sync": "npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/device": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/preferences": "^6.0.0",
+    "@capacitor-community/sqlite": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "typescript": "^5.3.3"
+  }
+}

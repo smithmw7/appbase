@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# iOS
+container/ios/App/Pods/
+container/ios/App/Podfile.lock
+container/ios/App/*.xcworkspace/xcuserdata/
+container/ios/App/*.xcodeproj/xcuserdata/
+container/ios/App/*.xcodeproj/project.xcworkspace/
+container/ios/App/DerivedData/
+container/ios/App/.DS_Store
+
+# Android
+container/android/.gradle/
+container/android/build/
+container/android/app/build/
+container/android/.idea/
+container/android/local.properties
+container/android/.DS_Store
+
+# Capacitor
+container/.capacitor/
+container/ios/App/App/public/
+container/ios/App/App/capacitor.config.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Task Master
+.taskmaster/tasks/tasks.json
+.taskmaster/reports/

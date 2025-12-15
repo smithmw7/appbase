@@ -1,0 +1,54 @@
+{
+  "parameters": {
+    "enable_ads": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN",
+      "description": "Enable or disable ads in the app"
+    },
+    "ad_unit_id": {
+      "defaultValue": {
+        "value": ""
+      },
+      "valueType": "STRING",
+      "description": "AdMob ad unit ID for interstitial ads"
+    },
+    "revenue_cat_api_key": {
+      "defaultValue": {
+        "value": ""
+      },
+      "valueType": "STRING",
+      "description": "RevenueCat API key for in-app purchases"
+    },
+    "remove_ads_product_id": {
+      "defaultValue": {
+        "value": ""
+      },
+      "valueType": "STRING",
+      "description": "Product ID for remove ads in-app purchase"
+    },
+    "app_version": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "valueType": "STRING",
+      "description": "Current app version"
+    },
+    "maintenance_mode": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "valueType": "BOOLEAN",
+      "description": "Enable maintenance mode to temporarily disable app features"
+    }
+  },
+  "version": {
+    "versionNumber": "1",
+    "updateTime": "2024-12-14T20:00:00Z",
+    "updateUser": {
+      "email": "firebase-adminsdk@com-hightopgames-firebase.iam.gserviceaccount.com"
+    },
+    "description": "Initial Remote Config template with 6 required keys"
+  }
+}

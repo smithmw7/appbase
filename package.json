@@ -1,0 +1,36 @@
+{
+  "name": "puzzle-app-framework",
+  "version": "1.0.0",
+  "description": "Web-first native puzzle app framework with replaceable content",
+  "private": true,
+  "workspaces": [
+    "content/*",
+    "container"
+  ],
+  "scripts": {
+    "build:hello": "node pipeline/scripts/build-all.js hello",
+    "build:debug": "node pipeline/scripts/build-all.js debug",
+    "build:main": "node pipeline/scripts/build-all.js main",
+    "sync:hello": "node pipeline/scripts/sync-capacitor.js hello",
+    "sync:debug": "node pipeline/scripts/sync-capacitor.js debug",
+    "sync:main": "node pipeline/scripts/sync-capacitor.js main",
+    "configure:hello": "node pipeline/scripts/configure-ios.js hello",
+    "configure:debug": "node pipeline/scripts/configure-ios.js debug",
+    "configure:main": "node pipeline/scripts/configure-ios.js main",
+    "install:all": "npm install && npm install --workspace=container && npm install --workspace=content/hello && npm install --workspace=content/debug && npm install --workspace=content/main",
+    "firebase:login": "npx firebase-tools login",
+    "firebase:use": "npx firebase-tools use com-hightopgames-firebase",
+    "firebase:remoteconfig": "npx firebase-tools remoteconfig:publish firebase-remote-config.template.json",
+    "firebase:apps": "npx firebase-tools apps:list IOS",
+    "firebase:download-config": "npx firebase-tools apps:sdkconfig IOS 1:74002814264:ios:9d080eec9bb5da1c76ddcd > container/ios/App/App/GoogleService-Info.plist",
+    "firebase:deploy-remoteconfig": "npx firebase-tools deploy --only remoteconfig"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0",
+    "plist": "^3.1.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

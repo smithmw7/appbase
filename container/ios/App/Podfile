@@ -1,0 +1,38 @@
+require_relative '../../../node_modules/@capacitor/ios/scripts/pods_helpers'
+
+platform :ios, '13.0'
+use_frameworks!
+
+# workaround to avoid Xcode caching of Pods that requires
+# Product -> Clean Build Folder after new Cordova plugins installed
+# Requires CocoaPods 1.6 or newer
+install! 'cocoapods', :disable_input_output_paths => true
+
+def capacitor_pods
+  pod 'Capacitor', :path => '../../../node_modules/@capacitor/ios'
+  pod 'CapacitorCordova', :path => '../../../node_modules/@capacitor/ios'
+  pod 'CapacitorApp', :path => '../../../node_modules/@capacitor/app'
+  pod 'CapacitorDevice', :path => '../../../node_modules/@capacitor/device'
+  pod 'CapacitorHaptics', :path => '../../../node_modules/@capacitor/haptics'
+  pod 'CapacitorPreferences', :path => '../../../node_modules/@capacitor/preferences'
+  pod 'CapacitorCommunitySqlite', :path => '../../../node_modules/@capacitor-community/sqlite'
+end
+
+target 'App' do
+  capacitor_pods
+  
+  # Firebase
+  pod 'Firebase/Core'
+  pod 'Firebase/Analytics'
+  pod 'Firebase/RemoteConfig'
+  
+  # AdMob
+  pod 'Google-Mobile-Ads-SDK'
+  
+  # RevenueCat (comment out if not using IAP yet)
+  # pod 'Purchases', '~> 6.0'
+end
+
+post_install do |installer|
+  assertDeploymentTarget(installer)
+end

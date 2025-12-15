@@ -1,0 +1,12 @@
+{
+  "name": "@puzzle-app/shared",
+  "version": "1.0.0",
+  "description": "Shared bridge interface for puzzle app content projects",
+  "main": "src/bridge.ts",
+  "types": "src/bridge.ts",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

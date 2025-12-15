@@ -1,0 +1,8 @@
+{
+  "bundleId": "com.puzzleapp.debug",
+  "appName": "Puzzle App Debug",
+  "iconPath": "pipeline/assets/icons/debug",
+  "contentDir": "content/debug",
+  "firebaseConfig": "container/ios/App/App/GoogleService-Info.plist",
+  "enableAds": true
+}

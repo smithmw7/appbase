@@ -1,0 +1,8 @@
+{
+  "bundleId": "com.puzzleapp.main",
+  "appName": "Puzzle App",
+  "iconPath": "pipeline/assets/icons/main",
+  "contentDir": "content/main",
+  "firebaseConfig": "container/ios/App/App/GoogleService-Info.plist",
+  "enableAds": true
+}
