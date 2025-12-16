@@ -1,0 +1,1 @@
+class a{async signInAnonymously(){return{userId:"web-mock-user-id"}}async getCurrentUserId(){return{userId:null}}async savePlayerData(){return{success:!1}}async loadPlayerData(){return{data:null}}async syncPlayerData(){return{data:null}}}export{a as FirebaseAuthPluginWeb};

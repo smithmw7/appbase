@@ -7,6 +7,8 @@ import { COLORS } from './constants';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { audioManager } from './audio/AudioManager';
+import { playerDataManager } from './data/PlayerDataManager';
+import { firebaseSyncManager } from './data/FirebaseSyncManager';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('start_screen');
@@ -36,6 +38,10 @@ const App: React.FC = () => {
   // Audio settings state
   const [musicVolume, setMusicVolume] = useState(() => audioManager.getMusicVolume());
   const [sfxVolume, setSfxVolume] = useState(() => audioManager.getSfxVolume());
+  
+  // Track play time
+  const playTimeRef = useRef<number>(0);
+  const playTimeIntervalRef = useRef<number | null>(null);
   
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
@@ -69,17 +75,65 @@ const App: React.FC = () => {
     fetchAppInfo();
   }, []);
 
-  // Handle app state changes (background/foreground) for music
+  // Initialize player data and Firebase sync on app mount
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeData = async () => {
+      try {
+        // Initialize Firebase auth and get user ID
+        const userId = await firebaseSyncManager.initialize();
+        if (!userId) {
+          console.warn('Failed to initialize Firebase auth, using local-only mode');
+          // Generate local UUID as fallback
+          const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          await playerDataManager.initialize(localId);
+          return;
+        }
+
+        // Initialize player data with user ID
+        await playerDataManager.initialize(userId);
+
+        // Perform initial sync
+        await firebaseSyncManager.performInitialSync();
+
+        // Start periodic sync
+        firebaseSyncManager.startPeriodicSync();
+
+        // Start activity session
+        playerDataManager.startSession();
+      } catch (error) {
+        console.error('Failed to initialize player data:', error);
+      }
+    };
+
+    if (isMounted) {
+      initializeData();
+    }
+
+    return () => {
+      isMounted = false;
+      // End session and sync on unmount
+      playerDataManager.endSession().catch(console.error);
+      firebaseSyncManager.stopPeriodicSync();
+      firebaseSyncManager.forceSync().catch(console.error);
+    };
+  }, []);
+
+  // Handle app state changes (background/foreground) for music and sync
   useEffect(() => {
     let listenerHandle: any = null;
     
     CapacitorApp.addListener('appStateChange', ({ isActive }) => {
       if (isActive) {
-        // App came to foreground - resume music if it was playing
+        // App came to foreground - resume music and sync
         audioManager.resumeMusic();
+        firebaseSyncManager.forceSync().catch(console.error);
       } else {
-        // App went to background - pause music
+        // App went to background - pause music and end session
         audioManager.pauseMusic();
+        playerDataManager.endSession().catch(console.error);
+        firebaseSyncManager.forceSync().catch(console.error);
       }
     }).then(handle => {
       listenerHandle = handle;
@@ -143,6 +197,11 @@ const App: React.FC = () => {
     setStreak(0); // Reset streak on new standard puzzle
     setUndoJustUsed(false); // Reset undo state
     
+    // Track puzzle start
+    if (index >= 0) {
+      playerDataManager.onPuzzleStart(rackSize, index).catch(console.error);
+    }
+    
     // Start new music track for this puzzle
     audioManager.onNewPuzzle();
     
@@ -173,9 +232,37 @@ const App: React.FC = () => {
         setWordHistory([level.startWord]); // Start history with the initial word
         setStatus('playing');
         setUndoJustUsed(false); // Ensure undo is reset when game starts
+        
+        // Start tracking play time
+        if (playTimeIntervalRef.current) {
+          clearInterval(playTimeIntervalRef.current);
+        }
+        playTimeRef.current = Date.now();
+        playTimeIntervalRef.current = window.setInterval(() => {
+          const elapsed = Math.floor((Date.now() - playTimeRef.current) / 1000);
+          if (elapsed > 0) {
+            playerDataManager.addPlayTime(1).catch(console.error);
+            playTimeRef.current = Date.now();
+          }
+        }, 10000); // Update every 10 seconds
       }
     }, 100);
   }, [customLevelData]);
+  
+  // Stop play time tracking when game ends
+  useEffect(() => {
+    if (status === 'won' || status === 'lost' || status === 'round_won' || status === 'start_screen') {
+      if (playTimeIntervalRef.current) {
+        clearInterval(playTimeIntervalRef.current);
+        playTimeIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (playTimeIntervalRef.current) {
+        clearInterval(playTimeIntervalRef.current);
+      }
+    };
+  }, [status]);
 
   useEffect(() => {
     // Ensure bank is generated for the current size
@@ -198,12 +285,18 @@ const App: React.FC = () => {
     // Initialize AudioContext on first user interaction (required for iOS)
     audioManager.initializeOnUserInteraction();
     audioManager.playSfx('UI_click');
+    
+    // Start activity session if not already started
+    playerDataManager.startSession();
+    
     if (isEndlessMode) {
       // Endless mode starts with a random puzzle, then continues
       const bank = getPuzzleBank(currentRackSize);
       const randomIndex = Math.floor(Math.random() * bank.length);
       loadPuzzle(randomIndex, currentRackSize);
       setStreak(0);
+      // Reset streak in player data
+      playerDataManager.updateStreak(0).catch(console.error);
     } else {
       const bank = getPuzzleBank(currentRackSize);
       const randomIndex = Math.floor(Math.random() * bank.length);
@@ -236,15 +329,25 @@ const App: React.FC = () => {
             
             // Re-initialize history with current word
             setWordHistory([currentWord]);
-            setStreak(prev => prev + 1);
+            const newStreak = streak + 1;
+            setStreak(newStreak);
+            // Track streak update
+            playerDataManager.updateStreak(newStreak).catch(console.error);
+            // Track endless round completion
+            playerDataManager.onEndlessRoundComplete().catch(console.error);
             setStatus('playing');
             setUndoJustUsed(false); // Ensure undo is reset when round starts
+            // Queue sync
+            firebaseSyncManager.queueSync();
         } else {
             // Generator failed (dead end?)
             alert("No more valid puzzles found from this word! Streak ended.");
             setStatus('lost');
             setUndoJustUsed(false); // Reset on game over
             audioManager.playSfx('puzzle_win_okay');
+            // Track loss (endless mode)
+            playerDataManager.onPuzzleLost(currentRackSize, -1).catch(console.error);
+            firebaseSyncManager.queueSync();
         }
     }, 100);
   };
@@ -350,6 +453,12 @@ const App: React.FC = () => {
            setStatus('lost');
            setUndoJustUsed(false); // Reset undo state on game over
            audioManager.playSfx('puzzle_win_okay');
+           // Track puzzle loss
+           if (currentPuzzleIndex >= 0) {
+             playerDataManager.onPuzzleLost(currentRackSize, currentPuzzleIndex).catch(console.error);
+           }
+           // Queue sync
+           firebaseSyncManager.queueSync();
          }
        });
        return () => cancelAnimationFrame(frameId);
@@ -533,15 +642,32 @@ const App: React.FC = () => {
       audioManager.playSfx('word_valid');
       
       if (rackTiles.length === 0) {
+        const startTime = currentLevel ? Date.now() - (wordHistory.length * 5000) : Date.now(); // Rough estimate
+        const timeToComplete = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+        
         if (isEndlessMode) {
             setStatus('round_won');
+            // Track endless round completion
+            playerDataManager.onEndlessRoundComplete().catch(console.error);
         } else {
             setStatus('won');
+            // Track puzzle completion
+            if (currentPuzzleIndex >= 0) {
+              playerDataManager.onPuzzleComplete(
+                currentRackSize,
+                currentPuzzleIndex,
+                timeToComplete,
+                0 // tilesRemaining = 0 (perfect)
+              ).catch(console.error);
+            }
         }
         // Reset undo state on game end
         setUndoJustUsed(false);
         // Play perfect win sound when rack is cleared
         audioManager.playSfx('puzzle_win_perfect');
+        
+        // Queue sync after completion
+        firebaseSyncManager.queueSync();
       }
     } else {
       setShake(true);
@@ -653,6 +779,8 @@ const App: React.FC = () => {
                 setMusicVolume(vol);
                 // Update volume immediately using GainNode (works on iOS!)
                 audioManager.setMusicVolume(vol);
+                // Save to player data
+                playerDataManager.updateSettings({ musicVolume: vol }).catch(console.error);
               }}
               onMouseUp={() => {
                 audioManager.playSfx('UI_click');
@@ -683,6 +811,8 @@ const App: React.FC = () => {
                 setSfxVolume(vol);
                 // Update volume immediately using GainNode (works on iOS!)
                 audioManager.setSfxVolume(vol);
+                // Save to player data
+                playerDataManager.updateSettings({ sfxVolume: vol }).catch(console.error);
                 // Play a test sound at the new volume so user can hear the change
                 // Use a small delay to ensure volume is set first
                 setTimeout(() => {
@@ -715,6 +845,8 @@ const App: React.FC = () => {
               setHapticsEnabled(e.target.checked);
               triggerHaptic('light');
               audioManager.playSfx('UI_toggle');
+              // Save to player data
+              playerDataManager.updateSettings({ hapticsEnabled: e.target.checked }).catch(console.error);
             }}
             className="w-5 h-5 accent-amber-500"
           />
@@ -808,6 +940,11 @@ const App: React.FC = () => {
                     triggerHaptic('light');
                     audioManager.playSfx('UI_toggle');
                     setIsEndlessMode(e.target.checked);
+                    if (!e.target.checked) {
+                      // Reset streak when disabling endless mode
+                      setStreak(0);
+                      playerDataManager.updateStreak(0).catch(console.error);
+                    }
                   }}
                   className="w-5 h-5 accent-purple-600"
                 />

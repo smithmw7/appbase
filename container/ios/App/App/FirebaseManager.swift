@@ -2,12 +2,15 @@ import Foundation
 import FirebaseCore
 import FirebaseAnalytics
 import FirebaseRemoteConfig
+import FirebaseAuth
+import FirebaseFirestore
 
 /// Singleton manager for Firebase services (Analytics and Remote Config)
 @objc public class FirebaseManager: NSObject {
     @objc public static let shared = FirebaseManager()
 
     private var remoteConfig: RemoteConfig?
+    private var firestore: Firestore?
     private var isInitialized = false
 
     private override init() {
@@ -44,6 +47,14 @@ import FirebaseRemoteConfig
 
         // Fetch Remote Config values
         fetchRemoteConfig()
+
+        // Initialize Firestore with offline persistence
+        let db = Firestore.firestore()
+        let settings = FirestoreSettings()
+        settings.isPersistenceEnabled = true
+        settings.cacheSizeBytes = FirestoreCacheSizeUnlimited
+        db.settings = settings
+        self.firestore = db
 
         isInitialized = true
     }
@@ -86,5 +97,318 @@ import FirebaseRemoteConfig
     /// Get a Remote Config value as Number
     @objc public func getRemoteConfigNumber(_ key: String) -> NSNumber {
         return remoteConfig?.configValue(forKey: key).numberValue ?? 0
+    }
+
+    // MARK: - Authentication
+
+    /// Sign in anonymously and return user ID
+    /// - Parameter completion: Callback with user ID string or error message
+    @objc public func signInAnonymously(completion: @escaping (String?, String?) -> Void) {
+        Auth.auth().signInAnonymously { [weak self] authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned from anonymous sign-in")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Get current authenticated user ID
+    /// - Returns: User ID string or nil if not authenticated
+    @objc public func getCurrentUserId() -> String? {
+        return Auth.auth().currentUser?.uid
+    }
+
+    // MARK: - Firestore Player Data
+
+    /// Convert data dictionary to Firestore-compatible format
+    private func convertToFirestoreData(_ data: [String: Any]) -> [String: Any] {
+        var firestoreData: [String: Any] = [:]
+        
+        for (key, value) in data {
+            if let stringValue = value as? String {
+                // Try to parse ISO timestamp strings to Firestore Timestamp
+                if key.contains("At") || key.contains("Time") || key == "createdAt" || key == "lastSyncedAt" {
+                    if let date = ISO8601DateFormatter().date(from: stringValue) {
+                        firestoreData[key] = Timestamp(date: date)
+                    } else {
+                        firestoreData[key] = stringValue
+                    }
+                } else {
+                    firestoreData[key] = stringValue
+                }
+            } else if let dictValue = value as? [String: Any] {
+                firestoreData[key] = convertToFirestoreData(dictValue)
+            } else if let arrayValue = value as? [Any] {
+                firestoreData[key] = arrayValue.map { item in
+                    if let dictItem = item as? [String: Any] {
+                        return convertToFirestoreData(dictItem)
+                    }
+                    return item
+                }
+            } else {
+                firestoreData[key] = value
+            }
+        }
+        
+        return firestoreData
+    }
+
+    /// Convert Firestore data to plain dictionary
+    private func convertFromFirestoreData(_ data: [String: Any]) -> [String: Any] {
+        var plainData: [String: Any] = [:]
+        
+        for (key, value) in data {
+            if let timestamp = value as? Timestamp {
+                // Convert Timestamp to ISO string
+                let formatter = ISO8601DateFormatter()
+                plainData[key] = formatter.string(from: timestamp.dateValue())
+            } else if let dictValue = value as? [String: Any] {
+                plainData[key] = convertFromFirestoreData(dictValue)
+            } else if let arrayValue = value as? [Any] {
+                plainData[key] = arrayValue.map { item in
+                    if let dictItem = item as? [String: Any] {
+                        return convertFromFirestoreData(dictItem)
+                    }
+                    if let timestampItem = item as? Timestamp {
+                        let formatter = ISO8601DateFormatter()
+                        return formatter.string(from: timestampItem.dateValue())
+                    }
+                    return item
+                }
+            } else {
+                plainData[key] = value
+            }
+        }
+        
+        return plainData
+    }
+
+    /// Save player data to Firestore
+    /// - Parameters:
+    ///   - userId: Firebase user ID
+    ///   - data: Player data dictionary
+    ///   - completion: Callback with success boolean and error message
+    @objc public func savePlayerData(userId: String, data: [String: Any], completion: @escaping (Bool, String?) -> Void) {
+        guard let db = firestore else {
+            completion(false, "Firestore not initialized")
+            return
+        }
+
+        var firestoreData = convertToFirestoreData(data)
+        firestoreData["lastSyncedAt"] = Timestamp()
+
+        db.collection("players").document(userId).setData(firestoreData, merge: true) { error in
+            if let error = error {
+                completion(false, error.localizedDescription)
+            } else {
+                completion(true, nil)
+            }
+        }
+    }
+
+    /// Load player data from Firestore
+    /// - Parameters:
+    ///   - userId: Firebase user ID
+    ///   - completion: Callback with data dictionary or error message
+    @objc public func loadPlayerData(userId: String, completion: @escaping ([String: Any]?, String?) -> Void) {
+        guard let db = firestore else {
+            completion(nil, "Firestore not initialized")
+            return
+        }
+
+        db.collection("players").document(userId).getDocument { document, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+
+            guard let document = document, document.exists else {
+                // Document doesn't exist yet - return nil (not an error)
+                completion(nil, nil)
+                return
+            }
+
+            if let data = document.data() {
+                // Convert Firestore data to plain dictionary
+                let plainData = self?.convertFromFirestoreData(data) ?? data
+                completion(plainData, nil)
+            } else {
+                completion(nil, "Document exists but has no data")
+            }
+        }
+    }
+
+    /// Sync player data (merge local with remote)
+    /// - Parameters:
+    ///   - userId: Firebase user ID
+    ///   - localData: Local player data dictionary
+    ///   - completion: Callback with merged data dictionary or error message
+    @objc public func syncPlayerData(userId: String, localData: [String: Any], completion: @escaping ([String: Any]?, String?) -> Void) {
+        loadPlayerData(userId: userId) { [weak self] remoteData, error in
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+
+            // If no remote data, use local data
+            guard let remoteData = remoteData else {
+                // Save local data to Firestore
+                self?.savePlayerData(userId: userId, data: localData) { success, saveError in
+                    if success {
+                        completion(localData, nil)
+                    } else {
+                        completion(localData, saveError) // Return local data even if save fails
+                    }
+                }
+                return
+            }
+
+            // Merge local and remote data (prefer newer timestamps)
+            var merged = remoteData
+
+            // Compare lastSyncedAt timestamps (convert strings to dates if needed)
+            let localLastSynced: Date? = {
+                if let timestamp = localData["lastSyncedAt"] as? Timestamp {
+                    return timestamp.dateValue()
+                } else if let string = localData["lastSyncedAt"] as? String {
+                    return ISO8601DateFormatter().date(from: string)
+                }
+                return nil
+            }()
+            let remoteLastSynced: Date? = {
+                if let timestamp = remoteData["lastSyncedAt"] as? Timestamp {
+                    return timestamp.dateValue()
+                } else if let string = remoteData["lastSyncedAt"] as? String {
+                    return ISO8601DateFormatter().date(from: string)
+                }
+                return nil
+            }()
+
+            // If local is newer or equal, merge local into remote
+            if let local = localLastSynced, let remote = remoteLastSynced, local >= remote {
+                // Merge stats (take maximums for streaks, sums for totals)
+                if let localStats = localData["stats"] as? [String: Any],
+                   let remoteStats = remoteData["stats"] as? [String: Any] {
+                    var mergedStats = remoteStats
+                    mergedStats["maxStreak"] = max(
+                        (localStats["maxStreak"] as? Int ?? 0),
+                        (remoteStats["maxStreak"] as? Int ?? 0)
+                    )
+                    mergedStats["totalPuzzlesCompleted"] = max(
+                        (localStats["totalPuzzlesCompleted"] as? Int ?? 0),
+                        (remoteStats["totalPuzzlesCompleted"] as? Int ?? 0)
+                    )
+                    mergedStats["totalPlayTime"] = max(
+                        (localStats["totalPlayTime"] as? Int ?? 0),
+                        (remoteStats["totalPlayTime"] as? Int ?? 0)
+                    )
+                    // Handle lastPlayedAt (could be Timestamp or ISO string)
+                    if let localLastPlayed = localStats["lastPlayedAt"] {
+                        let localDate: Date? = {
+                            if let timestamp = localLastPlayed as? Timestamp {
+                                return timestamp.dateValue()
+                            } else if let string = localLastPlayed as? String {
+                                return ISO8601DateFormatter().date(from: string)
+                            }
+                            return nil
+                        }()
+                        let remoteDate: Date? = {
+                            if let remoteLastPlayed = remoteStats["lastPlayedAt"] {
+                                if let timestamp = remoteLastPlayed as? Timestamp {
+                                    return timestamp.dateValue()
+                                } else if let string = remoteLastPlayed as? String {
+                                    return ISO8601DateFormatter().date(from: string)
+                                }
+                            }
+                            return nil
+                        }()
+                        if let local = localDate, let remote = remoteDate {
+                            mergedStats["lastPlayedAt"] = local >= remote ? localLastPlayed : remoteStats["lastPlayedAt"]
+                        } else if localDate != nil {
+                            mergedStats["lastPlayedAt"] = localLastPlayed
+                        } else if remoteStats["lastPlayedAt"] != nil {
+                            mergedStats["lastPlayedAt"] = remoteStats["lastPlayedAt"]
+                        }
+                    } else if remoteStats["lastPlayedAt"] != nil {
+                        mergedStats["lastPlayedAt"] = remoteStats["lastPlayedAt"]
+                    }
+                    merged["stats"] = mergedStats
+                }
+
+                // Merge puzzle progress (prefer local if newer)
+                if let localProgress = localData["puzzleProgress"] as? [String: Any] {
+                    var mergedProgress = remoteData["puzzleProgress"] as? [String: Any] ?? [:]
+                    for (key, value) in localProgress {
+                        if let localPuzzle = value as? [String: Any],
+                           let remotePuzzle = mergedProgress[key] as? [String: Any] {
+                            // Prefer local if it has newer completion or better time
+                            let localCompletedDate: Date? = {
+                                if let timestamp = localPuzzle["firstCompletedAt"] as? Timestamp {
+                                    return timestamp.dateValue()
+                                } else if let string = localPuzzle["firstCompletedAt"] as? String {
+                                    return ISO8601DateFormatter().date(from: string)
+                                }
+                                return nil
+                            }()
+                            let remoteCompletedDate: Date? = {
+                                if let timestamp = remotePuzzle["firstCompletedAt"] as? Timestamp {
+                                    return timestamp.dateValue()
+                                } else if let string = remotePuzzle["firstCompletedAt"] as? String {
+                                    return ISO8601DateFormatter().date(from: string)
+                                }
+                                return nil
+                            }()
+                            
+                            if let local = localCompletedDate, let remote = remoteCompletedDate, local >= remote {
+                                mergedProgress[key] = localPuzzle
+                            } else if localPuzzle["completed"] as? Bool == true && remotePuzzle["completed"] as? Bool != true {
+                                mergedProgress[key] = localPuzzle
+                            } else {
+                                // Keep remote if it has better stats
+                                var bestPuzzle = remotePuzzle
+                                if let localBestTime = localPuzzle["bestTime"] as? Int,
+                                   let remoteBestTime = remotePuzzle["bestTime"] as? Int,
+                                   localBestTime < remoteBestTime {
+                                    bestPuzzle["bestTime"] = localBestTime
+                                }
+                                if let localPerfect = localPuzzle["perfectCompletions"] as? Int,
+                                   let remotePerfect = remotePuzzle["perfectCompletions"] as? Int {
+                                    bestPuzzle["perfectCompletions"] = max(localPerfect, remotePerfect)
+                                }
+                                mergedProgress[key] = bestPuzzle
+                            }
+                        } else {
+                            mergedProgress[key] = value
+                        }
+                    }
+                    merged["puzzleProgress"] = mergedProgress
+                }
+
+                // Merge endless mode (take best streak)
+                if let localEndless = localData["endlessMode"] as? [String: Any],
+                   let remoteEndless = remoteData["endlessMode"] as? [String: Any] {
+                    var mergedEndless = remoteEndless
+                    mergedEndless["bestStreak"] = max(
+                        (localEndless["bestStreak"] as? Int ?? 0),
+                        (remoteEndless["bestStreak"] as? Int ?? 0)
+                    )
+                    merged["endlessMode"] = mergedEndless
+                }
+            }
+
+            // Save merged data
+            self?.savePlayerData(userId: userId, data: merged) { success, saveError in
+                if success {
+                    completion(merged, nil)
+                } else {
+                    completion(merged, saveError) // Return merged data even if save fails
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,9 @@
 {
   "remoteconfig": {
     "template": "firebase-remote-config.template.json"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
