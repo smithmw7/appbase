@@ -15,17 +15,6 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
-		E158C10A2EEFC59700F2DC6B /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */; };
-		E1B28CED2EEFC8ED00B7AAF4 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */; };
-		E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */; };
-		E1B28CF82EEFE43700B7AAF4 /* LocalStoragePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */; };
-		E1B28CF92EEFE43700B7AAF4 /* GameBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */; };
-		E1B28CFA2EEFE43700B7AAF4 /* IAPPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */; };
-		E1B28CFB2EEFE43700B7AAF4 /* IAPPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */; };
-		E1B28CFC2EEFE43700B7AAF4 /* GameBridgePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */; };
-		E1B28CFD2EEFE43700B7AAF4 /* LocalStoragePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */; };
-		E1B28CFE2EEFE43700B7AAF4 /* AdMobPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */; };
-		E1B28CFF2EEFE43700B7AAF4 /* FirebaseManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,17 +29,6 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
-		E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
-		E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AdMobPlugin.m; sourceTree = "<group>"; };
-		E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobPlugin.swift; sourceTree = "<group>"; };
-		E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FirebaseManager.m; sourceTree = "<group>"; };
-		E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameBridgePlugin.m; sourceTree = "<group>"; };
-		E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameBridgePlugin.swift; sourceTree = "<group>"; };
-		E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IAPPlugin.m; sourceTree = "<group>"; };
-		E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPPlugin.swift; sourceTree = "<group>"; };
-		E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LocalStoragePlugin.m; sourceTree = "<group>"; };
-		E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStoragePlugin.swift; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -95,17 +73,6 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
-				E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */,
-				E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */,
-				E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */,
-				E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */,
-				E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */,
-				E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */,
-				E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */,
-				E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */,
-				E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */,
-				E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */,
-				E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -139,7 +106,6 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
-				C25848F13E80D88CAB9C186F /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -161,7 +127,7 @@
 				TargetAttributes = {
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
-						LastSwiftMigration = 2620;
+						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -175,6 +141,8 @@
 				Base,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
+			packageReferences = (
+			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -195,7 +163,6 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
-				E1B28CED2EEFC8ED00B7AAF4 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,21 +202,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C25848F13E80D88CAB9C186F /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -257,17 +209,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E158C10A2EEFC59700F2DC6B /* FirebaseManager.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
-				E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */,
-				E1B28CF82EEFE43700B7AAF4 /* LocalStoragePlugin.swift in Sources */,
-				E1B28CF92EEFE43700B7AAF4 /* GameBridgePlugin.swift in Sources */,
-				E1B28CFA2EEFE43700B7AAF4 /* IAPPlugin.swift in Sources */,
-				E1B28CFB2EEFE43700B7AAF4 /* IAPPlugin.m in Sources */,
-				E1B28CFC2EEFE43700B7AAF4 /* GameBridgePlugin.m in Sources */,
-				E1B28CFD2EEFE43700B7AAF4 /* LocalStoragePlugin.m in Sources */,
-				E1B28CFE2EEFE43700B7AAF4 /* AdMobPlugin.swift in Sources */,
-				E1B28CFF2EEFE43700B7AAF4 /* FirebaseManager.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -405,20 +347,18 @@
 			baseConfigurationReference = FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.word-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.puzzleapp.wordstrike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hightopgames.capacitorsanity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -429,16 +369,15 @@
 			baseConfigurationReference = AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.word-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.puzzleapp.wordstrike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hightopgames.capacitorsanity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;

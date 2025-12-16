@@ -15,11 +15,11 @@ const target = process.argv[2];
 
 if (!target) {
   console.error('Usage: node build-all.js <target>');
-  console.error('Targets: hello, debug, main');
+  console.error('Targets: word-strike');
   process.exit(1);
 }
 
-const validTargets = ['hello', 'debug', 'main', 'word-strike'];
+const validTargets = ['word-strike'];
 if (!validTargets.includes(target)) {
   console.error(`Invalid target: ${target}`);
   console.error(`Valid targets: ${validTargets.join(', ')}`);

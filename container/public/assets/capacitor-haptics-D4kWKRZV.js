@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-B-QiVMZ4.js","assets/capacitor-core-xkrBY3ab.js","assets/capacitor-app-f5GRxBfG.js"])))=>i.map(i=>d[i]);
+import{_ as a}from"./capacitor-app-f5GRxBfG.js";import{r}from"./capacitor-core-xkrBY3ab.js";var s,o,t,c;(o=s||(s={})).Heavy="HEAVY",o.Medium="MEDIUM",o.Light="LIGHT",(c=t||(t={})).Success="SUCCESS",c.Warning="WARNING",c.Error="ERROR";const e=r("Haptics",{web:()=>a(()=>import("./web-B-QiVMZ4.js"),__vite__mapDeps([0,1,2])).then(a=>new a.HapticsWeb)});export{e as H,s as I,t as N};

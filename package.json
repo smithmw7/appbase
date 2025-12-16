@@ -8,17 +8,10 @@
     "container"
   ],
   "scripts": {
-    "build:hello": "node pipeline/scripts/build-all.js hello",
-    "build:debug": "node pipeline/scripts/build-all.js debug",
-    "build:main": "node pipeline/scripts/build-all.js main",
-    "sync:hello": "node pipeline/scripts/sync-capacitor.js hello",
-    "sync:debug": "node pipeline/scripts/sync-capacitor.js debug",
-    "sync:main": "node pipeline/scripts/sync-capacitor.js main",
-    "configure:hello": "node pipeline/scripts/configure-ios.js hello",
-    "configure:debug": "node pipeline/scripts/configure-ios.js debug",
-    "configure:main": "node pipeline/scripts/configure-ios.js main",
+    "build:word-strike": "node pipeline/scripts/build-all.js word-strike",
+    "sync:word-strike": "node pipeline/scripts/sync-capacitor.js word-strike",
     "configure:word-strike": "node pipeline/scripts/configure-ios.js word-strike",
-    "install:all": "npm install && npm install --workspace=container && npm install --workspace=content/hello && npm install --workspace=content/debug && npm install --workspace=content/main && npm install --workspace=content/word-strike",
+    "install:all": "npm install && npm install --workspace=container && npm install --workspace=content/word-strike",
     "firebase:login": "npx firebase-tools login",
     "firebase:use": "npx firebase-tools use com-hightopgames-firebase",
     "firebase:remoteconfig": "npx firebase-tools remoteconfig:publish firebase-remote-config.template.json",
@@ -34,5 +27,10 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/haptics": "^6.0.3"
   }
 }

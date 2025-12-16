@@ -4,41 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Word Patch</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      /* Custom animations */
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-        20%, 40%, 60%, 80% { transform: translateX(4px); }
-      }
-      .animate-shake {
-        animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-      }
-      
-      @keyframes pop {
-        0% { transform: scale(0.9); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-      .animate-pop {
-        animation: pop 0.2s ease-out forwards;
-      }
-
-      /* Prevent touch scrolling on game elements */
-      .no-touch-action {
-        touch-action: none;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+    <!-- Capacitor runtime (required for native plugins like App/Haptics) - must load before app bundle -->
+    <script src="capacitor.js" data-vite-ignore></script>
+    <link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-slate-50 text-slate-900 overflow-hidden">
     <div id="root"></div>

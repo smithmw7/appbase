@@ -26,6 +26,7 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const iosAppDir = path.resolve(__dirname, '../../container/ios/App/App');
 const infoPlistPath = path.join(iosAppDir, 'Info.plist');
 const capacitorConfigPath = path.resolve(__dirname, '../../container/capacitor.config.ts');
+const projectPbxprojPath = path.resolve(__dirname, '../../container/ios/App/App.xcodeproj/project.pbxproj');
 
 console.log(`Configuring iOS for target: ${target}`);
 
@@ -95,17 +96,34 @@ try {
     }
   }
 
-  // Update Xcode project bundle identifier
-  const projectPbxprojPath = path.resolve(__dirname, '../../container/ios/App/App.xcodeproj/project.pbxproj');
+  // Update Xcode project bundle identifier and increment build number (single source of truth)
   if (fs.existsSync(projectPbxprojPath)) {
     let projectContent = fs.readFileSync(projectPbxprojPath, 'utf8');
+
     // Replace PRODUCT_BUNDLE_IDENTIFIER in both Debug and Release configurations
     projectContent = projectContent.replace(
       /PRODUCT_BUNDLE_IDENTIFIER = [^;]+;/g,
       `PRODUCT_BUNDLE_IDENTIFIER = ${config.bundleId};`
     );
+
+    // Auto-increment build number (CURRENT_PROJECT_VERSION)
+    const buildNumberMatch = projectContent.match(/CURRENT_PROJECT_VERSION = (\d+);/);
+    if (buildNumberMatch) {
+      const currentBuild = parseInt(buildNumberMatch[1], 10);
+      const nextBuild = currentBuild + 1;
+      projectContent = projectContent.replace(
+        /CURRENT_PROJECT_VERSION = \d+;/g,
+        `CURRENT_PROJECT_VERSION = ${nextBuild};`
+      );
+      console.log(`✓ Incremented build number: ${currentBuild} → ${nextBuild}`);
+    } else {
+      console.log(`⚠ Could not find CURRENT_PROJECT_VERSION in project.pbxproj (no build increment performed)`);
+    }
+
     fs.writeFileSync(projectPbxprojPath, projectContent);
     console.log(`✓ Updated Xcode project bundle identifier`);
+  } else {
+    console.log(`⚠ Xcode project not found at ${projectPbxprojPath}`);
   }
 
   console.log(`✓ iOS configuration completed for ${target}`);

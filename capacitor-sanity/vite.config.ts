@@ -1,51 +1,46 @@
-import path from 'path';
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  server: {
-    port: 3003,
-    host: '0.0.0.0',
-  },
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-      '@shared': path.resolve(__dirname, '../shared/src'),
-    },
-  },
   build: {
-    outDir: 'dist',
-    emptyOutDir: true,
     // Production optimizations
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true, // Remove console.log in production
         drop_debugger: true,
-        passes: 2,
+        passes: 2, // Multiple passes for better compression
       },
       format: {
-        comments: false,
+        comments: false, // Remove all comments
       },
     },
     // Code splitting for faster initial load
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
           'capacitor-core': ['@capacitor/core'],
           'capacitor-app': ['@capacitor/app'],
           'capacitor-haptics': ['@capacitor/haptics'],
         },
       },
     },
+    // Optimize chunk size
     chunkSizeWarningLimit: 1000,
-    sourcemap: false, // No sourcemaps in production for faster builds
+    // Source maps only in dev (not needed in production)
+    sourcemap: false,
+    // Optimize assets
+    assetsInlineLimit: 4096, // Inline small assets as base64
+    // Target modern browsers for smaller bundles
     target: 'es2022',
-    assetsInlineLimit: 4096,
   },
+  // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', '@capacitor/core', '@capacitor/app', '@capacitor/haptics'],
+    include: ['@capacitor/core', '@capacitor/app', '@capacitor/haptics'],
+  },
+  // Suppress capacitor.js warning (it's loaded by Capacitor runtime, not bundled)
+  html: {
+    minify: {
+      ignoreCustomComments: [/capacitor\.js/],
+    },
   },
 });

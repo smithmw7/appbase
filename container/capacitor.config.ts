@@ -9,12 +9,16 @@ const config: CapacitorConfig = {
       allowMixedContent: true,
     },
     ios: {
+      // Optimize for fast startup
       allowsLinkPreview: false,
+      contentInset: 'never',
     },
   },
   ios: {
-    contentInset: 'automatic',
+    // Optimize for fast startup
+    contentInset: 'never',
     scrollEnabled: true,
+    limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
     SplashScreen: {

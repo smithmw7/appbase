@@ -5,7 +5,11 @@
   "main": "src/bridge.ts",
   "types": "src/bridge.ts",
   "scripts": {},
-  "dependencies": {},
+  "dependencies": {
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/haptics": "^6.0.3"
+  },
   "devDependencies": {
     "typescript": "^5.3.3"
   }
