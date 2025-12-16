@@ -19,10 +19,8 @@
 		E1B28CED2EEFC8ED00B7AAF4 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */; };
 		E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */; };
 		E1B28CF82EEFE43700B7AAF4 /* LocalStoragePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */; };
-		E1B28CF92EEFE43700B7AAF4 /* GameBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */; };
 		E1B28CFA2EEFE43700B7AAF4 /* IAPPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */; };
 		E1B28CFB2EEFE43700B7AAF4 /* IAPPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */; };
-		E1B28CFC2EEFE43700B7AAF4 /* GameBridgePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */; };
 		E1B28CFD2EEFE43700B7AAF4 /* LocalStoragePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */; };
 		E1B28CFE2EEFE43700B7AAF4 /* AdMobPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */; };
 		E1B28CFF2EEFE43700B7AAF4 /* FirebaseManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */; };
@@ -45,8 +43,6 @@
 		E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AdMobPlugin.m; sourceTree = "<group>"; };
 		E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobPlugin.swift; sourceTree = "<group>"; };
 		E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FirebaseManager.m; sourceTree = "<group>"; };
-		E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameBridgePlugin.m; sourceTree = "<group>"; };
-		E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameBridgePlugin.swift; sourceTree = "<group>"; };
 		E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IAPPlugin.m; sourceTree = "<group>"; };
 		E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPPlugin.swift; sourceTree = "<group>"; };
 		E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LocalStoragePlugin.m; sourceTree = "<group>"; };
@@ -98,8 +94,6 @@
 				E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */,
 				E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */,
 				E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */,
-				E1B28CF12EEFE43700B7AAF4 /* GameBridgePlugin.m */,
-				E1B28CF22EEFE43700B7AAF4 /* GameBridgePlugin.swift */,
 				E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */,
 				E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */,
 				E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */,
@@ -261,10 +255,8 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */,
 				E1B28CF82EEFE43700B7AAF4 /* LocalStoragePlugin.swift in Sources */,
-				E1B28CF92EEFE43700B7AAF4 /* GameBridgePlugin.swift in Sources */,
 				E1B28CFA2EEFE43700B7AAF4 /* IAPPlugin.swift in Sources */,
 				E1B28CFB2EEFE43700B7AAF4 /* IAPPlugin.m in Sources */,
-				E1B28CFC2EEFE43700B7AAF4 /* GameBridgePlugin.m in Sources */,
 				E1B28CFD2EEFE43700B7AAF4 /* LocalStoragePlugin.m in Sources */,
 				E1B28CFE2EEFE43700B7AAF4 /* AdMobPlugin.swift in Sources */,
 				E1B28CFF2EEFE43700B7AAF4 /* FirebaseManager.m in Sources */,
@@ -407,7 +399,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
@@ -431,7 +423,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";

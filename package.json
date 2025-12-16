@@ -17,8 +17,7 @@
     "firebase:remoteconfig": "npx firebase-tools remoteconfig:publish firebase-remote-config.template.json",
     "firebase:apps": "npx firebase-tools apps:list IOS",
     "firebase:download-config": "npx firebase-tools apps:sdkconfig IOS 1:74002814264:ios:9d080eec9bb5da1c76ddcd > container/ios/App/App/GoogleService-Info.plist",
-    "firebase:deploy-remoteconfig": "npx firebase-tools deploy --only remoteconfig",
-    "build:word-strike": "node pipeline/scripts/build-all.js word-strike"
+    "firebase:deploy-remoteconfig": "npx firebase-tools deploy --only remoteconfig"
   },
   "devDependencies": {
     "firebase-tools": "^13.0.0",
