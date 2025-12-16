@@ -195,6 +195,8 @@ const App: React.FC = () => {
 
   const handleStartGame = () => {
     triggerHaptic('light');
+    // Initialize AudioContext on first user interaction (required for iOS)
+    audioManager.initializeOnUserInteraction();
     audioManager.playSfx('UI_click');
     if (isEndlessMode) {
       // Endless mode starts with a random puzzle, then continues
@@ -649,13 +651,8 @@ const App: React.FC = () => {
               onChange={(e) => {
                 const vol = parseFloat(e.target.value);
                 setMusicVolume(vol);
-                // Update volume immediately - this should work now with the improved setMusicVolume
+                // Update volume immediately using GainNode (works on iOS!)
                 audioManager.setMusicVolume(vol);
-                // Also directly update the current playing audio as a fallback
-                const currentMusic = audioManager.getCurrentMusicAudio();
-                if (currentMusic) {
-                  currentMusic.volume = vol;
-                }
               }}
               onMouseUp={() => {
                 audioManager.playSfx('UI_click');
@@ -684,7 +681,7 @@ const App: React.FC = () => {
               onChange={(e) => {
                 const vol = parseFloat(e.target.value);
                 setSfxVolume(vol);
-                // Update volume immediately
+                // Update volume immediately using GainNode (works on iOS!)
                 audioManager.setSfxVolume(vol);
                 // Play a test sound at the new volume so user can hear the change
                 // Use a small delay to ensure volume is set first
@@ -994,6 +991,7 @@ const App: React.FC = () => {
             <button 
                 onClick={() => {
                   triggerHaptic('light');
+                  audioManager.initializeOnUserInteraction();
                   audioManager.playSfx('UI_click');
                   setIsMenuOpen(true);
                   setShowDebug(false);
@@ -1100,6 +1098,7 @@ const App: React.FC = () => {
         <button 
           onClick={() => {
             triggerHaptic('light');
+            audioManager.initializeOnUserInteraction();
             audioManager.playSfx('UI_click');
             setIsMenuOpen(true);
             setShowDebug(false);
