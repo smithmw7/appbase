@@ -6,6 +6,7 @@ import { TileData, BoardSlot, DragState, GameStatus, LevelData } from './types';
 import { COLORS } from './constants';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { audioManager } from './audio/AudioManager';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('start_screen');
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [rackTiles, setRackTiles] = useState<TileData[]>([]);
   const [shake, setShake] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   
   // Endless Mode State
   const [isEndlessMode, setIsEndlessMode] = useState(false);
@@ -30,6 +32,10 @@ const App: React.FC = () => {
   const [appInfoError, setAppInfoError] = useState<string | null>(null);
   const [hapticsError, setHapticsError] = useState<string | null>(null);
   const [undoJustUsed, setUndoJustUsed] = useState(false);
+  
+  // Audio settings state
+  const [musicVolume, setMusicVolume] = useState(() => audioManager.getMusicVolume());
+  const [sfxVolume, setSfxVolume] = useState(() => audioManager.getSfxVolume());
   
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
@@ -63,6 +69,50 @@ const App: React.FC = () => {
     fetchAppInfo();
   }, []);
 
+  // Handle app state changes (background/foreground) for music
+  useEffect(() => {
+    let listenerHandle: any = null;
+    
+    CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        // App came to foreground - resume music if it was playing
+        audioManager.resumeMusic();
+      } else {
+        // App went to background - pause music
+        audioManager.pauseMusic();
+      }
+    }).then(handle => {
+      listenerHandle = handle;
+    });
+
+    return () => {
+      if (listenerHandle) {
+        listenerHandle.remove();
+      }
+    };
+  }, []);
+
+  // Load haptics setting from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('settings.hapticsEnabled');
+      if (saved !== null) {
+        setHapticsEnabled(saved === 'true');
+      }
+    } catch (e) {
+      console.warn('Failed to load haptics setting:', e);
+    }
+  }, []);
+
+  // Save haptics setting when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('settings.hapticsEnabled', hapticsEnabled.toString());
+    } catch (e) {
+      console.warn('Failed to save haptics setting:', e);
+    }
+  }, [hapticsEnabled]);
+
   const triggerHaptic = useCallback(
     async (type: 'light' | 'medium' | 'heavy' | 'success' | 'error') => {
       if (!hapticsEnabled) return;
@@ -92,6 +142,9 @@ const App: React.FC = () => {
     setPossibleMoves(null); // Reset moves
     setStreak(0); // Reset streak on new standard puzzle
     setUndoJustUsed(false); // Reset undo state
+    
+    // Start new music track for this puzzle
+    audioManager.onNewPuzzle();
     
     // Small delay to allow UI to show loading
     setTimeout(() => {
@@ -142,6 +195,7 @@ const App: React.FC = () => {
 
   const handleStartGame = () => {
     triggerHaptic('light');
+    audioManager.playSfx('UI_click');
     if (isEndlessMode) {
       // Endless mode starts with a random puzzle, then continues
       const bank = getPuzzleBank(currentRackSize);
@@ -158,11 +212,15 @@ const App: React.FC = () => {
   const handleContinueStreak = () => {
     if (!currentLevel) return;
     triggerHaptic('medium');
+    audioManager.playSfx('UI_click');
     
     setStatus('loading');
     setPossibleMoves(null);
     setWordHistory([]); // Reset visual history for the new round
     setUndoJustUsed(false); // Reset undo state for new round
+    
+    // Start new music track for new round
+    audioManager.onNewPuzzle();
     
     setTimeout(() => {
         // Generate next round based on CURRENT board word
@@ -184,27 +242,32 @@ const App: React.FC = () => {
             alert("No more valid puzzles found from this word! Streak ended.");
             setStatus('lost');
             setUndoJustUsed(false); // Reset on game over
+            audioManager.playSfx('puzzle_win_okay');
         }
     }, 100);
   };
 
   const handleLoadCustomPuzzle = () => {
     triggerHaptic('light');
+    audioManager.playSfx('UI_click');
     const cleanWord = customStartWord.trim().toUpperCase();
     const cleanRack = customRackString.trim().toUpperCase().split('').filter(c => c.match(/[A-Z]/));
 
     if (cleanWord.length !== 5) {
       alert("Start word must be exactly 5 letters.");
+      audioManager.playSfx('word_wrong');
       return;
     }
 
     if (!isWordValid(cleanWord)) {
       alert(`"${cleanWord}" is not in the game dictionary.`);
+      audioManager.playSfx('word_wrong');
       return;
     }
 
     if (cleanRack.length === 0) {
       alert("Please enter at least one letter for the rack.");
+      audioManager.playSfx('word_wrong');
       return;
     }
 
@@ -213,6 +276,9 @@ const App: React.FC = () => {
     setWordHistory([]);
     setPossibleMoves(null);
     setUndoJustUsed(false); // Reset undo state
+
+    // Start new music track for custom puzzle
+    audioManager.onNewPuzzle();
 
     setTimeout(() => {
         // Construct a partial LevelData object
@@ -244,6 +310,7 @@ const App: React.FC = () => {
   };
 
   // Calculate possible moves whenever the board/rack state settles (effectively turn start + during turn)
+  // Use requestAnimationFrame to batch updates and avoid blocking the main thread
   useEffect(() => {
     if (status !== 'playing') {
       // Don't clear possibleMoves if we just won a round, so we can see the recap/board state nicely
@@ -253,29 +320,39 @@ const App: React.FC = () => {
       return;
     }
 
-    const allAvailableTiles = [...rackTiles];
-    boardSlots.forEach(slot => {
-      if (slot.stagedTile) {
-        allAvailableTiles.push(slot.stagedTile);
-      }
+    // Defer calculation to next frame to avoid blocking UI
+    const frameId = requestAnimationFrame(() => {
+      const allAvailableTiles = [...rackTiles];
+      boardSlots.forEach(slot => {
+        if (slot.stagedTile) {
+          allAvailableTiles.push(slot.stagedTile);
+        }
+      });
+
+      const currentWord = boardSlots.map(s => s.lockedChar).join('');
+      const moves = calculatePossibleMoves(currentWord, allAvailableTiles);
+      setPossibleMoves(moves);
     });
 
-    const currentWord = boardSlots.map(s => s.lockedChar).join('');
-    const moves = calculatePossibleMoves(currentWord, allAvailableTiles);
-    setPossibleMoves(moves);
-
+    return () => cancelAnimationFrame(frameId);
   }, [boardSlots, rackTiles, status]);
 
   // Check for Game Over (Lost)
   useEffect(() => {
     // Only trigger loss if possibleMoves has explicitly been calculated (is not null) and is empty
     if (status === 'playing' && possibleMoves !== null && rackTiles.length > 0) {
-       const totalMoves = Object.values(possibleMoves).reduce((acc, curr: string[]) => acc + curr.length, 0);
-       if (totalMoves === 0) {
-         setStatus('lost');
-         setUndoJustUsed(false); // Reset undo state on game over
-       }
+       // Use requestAnimationFrame to avoid blocking
+       const frameId = requestAnimationFrame(() => {
+         const totalMoves = Object.values(possibleMoves).reduce((acc, curr: string[]) => acc + curr.length, 0);
+         if (totalMoves === 0) {
+           setStatus('lost');
+           setUndoJustUsed(false); // Reset undo state on game over
+           audioManager.playSfx('puzzle_win_okay');
+         }
+       });
+       return () => cancelAnimationFrame(frameId);
     }
+    return undefined;
   }, [possibleMoves, status, rackTiles.length]);
   
   // Reset undo state when game status changes to non-playing states
@@ -289,6 +366,7 @@ const App: React.FC = () => {
   // Input Handlers
   const handleDragStart = (e: React.TouchEvent | React.MouseEvent, tile: TileData, source: 'rack' | 'board', index: number) => {
     triggerHaptic('heavy');
+    audioManager.playSfx('tile_pickup');
     let clientX, clientY, touchId;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -375,6 +453,8 @@ const App: React.FC = () => {
             }
           }
           handled = true;
+          // Play tile_release sound when successfully placed
+          audioManager.playSfx('tile_release');
         }
       }
     } else if (rackElement) {
@@ -448,6 +528,8 @@ const App: React.FC = () => {
       setUndoJustUsed(false);
       
       triggerHaptic('success');
+      audioManager.playSfx('word_valid');
+      
       if (rackTiles.length === 0) {
         if (isEndlessMode) {
             setStatus('round_won');
@@ -456,6 +538,8 @@ const App: React.FC = () => {
         }
         // Reset undo state on game end
         setUndoJustUsed(false);
+        // Play perfect win sound when rack is cleared
+        audioManager.playSfx('puzzle_win_perfect');
       }
     } else {
       setShake(true);
@@ -476,11 +560,13 @@ const App: React.FC = () => {
       setUndoJustUsed(false);
       
       triggerHaptic('error');
+      audioManager.playSfx('word_wrong');
     }
   };
 
   const handleShuffle = () => {
     triggerHaptic('light');
+    audioManager.playSfx('UI_click');
     setRackTiles(prev => {
       const copy = [...prev];
       for (let i = copy.length - 1; i > 0; i--) {
@@ -499,6 +585,7 @@ const App: React.FC = () => {
     }
     
     triggerHaptic('light');
+    audioManager.playSfx('UI_click');
     const tilesToReturn: TileData[] = [];
     const newSlots = boardSlots.map(s => {
       if (s.stagedTile) {
@@ -540,6 +627,344 @@ const App: React.FC = () => {
     </div>
   );
 
+  // Render unified Settings Panel
+  const renderSettingsPanel = () => (
+    <div className="space-y-6">
+      {/* Audio Section */}
+      <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
+        <h3 className="font-bold text-slate-700 mb-4">Audio</h3>
+        
+        <div className="space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-base font-semibold text-slate-700">Music Volume</label>
+              <span className="text-sm font-medium text-slate-600 bg-slate-200 px-2 py-1 rounded">{Math.round(musicVolume * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={musicVolume}
+              onChange={(e) => {
+                const vol = parseFloat(e.target.value);
+                setMusicVolume(vol);
+                // Update volume immediately - this should work now with the improved setMusicVolume
+                audioManager.setMusicVolume(vol);
+                // Also directly update the current playing audio as a fallback
+                const currentMusic = audioManager.getCurrentMusicAudio();
+                if (currentMusic) {
+                  currentMusic.volume = vol;
+                }
+              }}
+              onMouseUp={() => {
+                audioManager.playSfx('UI_click');
+              }}
+              onTouchEnd={() => {
+                audioManager.playSfx('UI_click');
+              }}
+              className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              style={{
+                background: `linear-gradient(to right, rgb(245 158 11) 0%, rgb(245 158 11) ${musicVolume * 100}%, rgb(226 232 240) ${musicVolume * 100}%, rgb(226 232 240) 100%)`
+              }}
+            />
+          </div>
+          
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-base font-semibold text-slate-700">Sound Effects Volume</label>
+              <span className="text-sm font-medium text-slate-600 bg-slate-200 px-2 py-1 rounded">{Math.round(sfxVolume * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={sfxVolume}
+              onChange={(e) => {
+                const vol = parseFloat(e.target.value);
+                setSfxVolume(vol);
+                // Update volume immediately
+                audioManager.setSfxVolume(vol);
+                // Play a test sound at the new volume so user can hear the change
+                // Use a small delay to ensure volume is set first
+                setTimeout(() => {
+                  audioManager.playSfx('UI_click');
+                }, 10);
+              }}
+              onMouseUp={() => {
+                // Don't play again on mouseup since we already played on change
+              }}
+              onTouchEnd={() => {
+                // Don't play again on touchend since we already played on change
+              }}
+              className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              style={{
+                background: `linear-gradient(to right, rgb(245 158 11) 0%, rgb(245 158 11) ${sfxVolume * 100}%, rgb(226 232 240) ${sfxVolume * 100}%, rgb(226 232 240) 100%)`
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Haptics Section */}
+      <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
+        <h3 className="font-bold text-slate-700 mb-2 flex items-center justify-between">
+          Haptics
+          <input
+            type="checkbox"
+            checked={hapticsEnabled}
+            onChange={(e) => {
+              setHapticsEnabled(e.target.checked);
+              triggerHaptic('light');
+              audioManager.playSfx('UI_toggle');
+            }}
+            className="w-5 h-5 accent-amber-500"
+          />
+        </h3>
+        <p className="text-xs text-slate-500">
+          Light taps for buttons; heavier feedback when moving tiles.
+        </p>
+        {hapticsError && (
+          <p className="text-xs text-red-600 mt-2 break-words">
+            Haptics error: {hapticsError}
+          </p>
+        )}
+      </div>
+
+      {/* Links Section */}
+      <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
+        <h3 className="font-bold text-slate-700 mb-3">Legal & Support</h3>
+        <div className="space-y-2">
+          <a
+            href="https://hightopgames.com/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              triggerHaptic('light');
+              audioManager.playSfx('UI_click');
+            }}
+            className="block text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Privacy Policy
+          </a>
+          <a
+            href="https://hightopgames.com/terms.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              triggerHaptic('light');
+              audioManager.playSfx('UI_click');
+            }}
+            className="block text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Terms of Service
+          </a>
+          <a
+            href="https://hightopgames.com/support.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              triggerHaptic('light');
+              audioManager.playSfx('UI_click');
+            }}
+            className="block text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Support
+          </a>
+        </div>
+      </div>
+
+      {/* About Section */}
+      <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
+        <h3 className="font-bold text-slate-700 mb-2">About</h3>
+        <p className="text-xs text-slate-500 mb-3">
+          Word Patch is a word puzzle game where you transform words by swapping letters. 
+          Clear the rack to complete each puzzle!
+        </p>
+        {appInfo && (
+          <div className="text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-200">
+            <div>Version: {appInfo.version}</div>
+            <div>Build: {appInfo.build}</div>
+          </div>
+        )}
+        {appInfoError && (
+          <div className="text-xs text-red-600 pt-2 border-t border-slate-200">
+            App info error: {appInfoError}
+          </div>
+        )}
+      </div>
+
+      {/* Debug Section - Hidden by default, shown when showDebug is true */}
+      {showDebug && (
+        <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 mt-6">
+          <h3 className="font-bold text-purple-700 mb-4">Debug Tools</h3>
+          
+          <div className="space-y-4">
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-bold text-purple-700 mb-2 flex items-center justify-between">
+                Endless Mode
+                <input 
+                  type="checkbox" 
+                  checked={isEndlessMode} 
+                  onChange={(e) => {
+                    triggerHaptic('light');
+                    audioManager.playSfx('UI_toggle');
+                    setIsEndlessMode(e.target.checked);
+                  }}
+                  className="w-5 h-5 accent-purple-600"
+                />
+              </h4>
+              <p className="text-xs text-purple-600">
+                {isEndlessMode ? `Streak: ${streak}` : 'Clear the rack to earn 5 new letters and keep playing.'}
+              </p>
+            </div>
+
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-bold text-purple-700 mb-2">Rack Size</h4>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    handleRackSizeChange(5);
+                    audioManager.playSfx('UI_click');
+                  }}
+                  className={`flex-1 py-2 rounded border font-bold transition-colors ${currentRackSize === 5 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
+                >
+                  5 Tiles
+                </button>
+                <button 
+                  onClick={() => {
+                    handleRackSizeChange(7);
+                    audioManager.playSfx('UI_click');
+                  }}
+                  className={`flex-1 py-2 rounded border font-bold transition-colors ${currentRackSize === 7 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
+                >
+                  7 Tiles
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-bold text-purple-700 mb-2">Create Custom Puzzle</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">START WORD (5 Letters)</label>
+                  <input 
+                    type="text" 
+                    value={customStartWord}
+                    onChange={(e) => setCustomStartWord(e.target.value.toUpperCase())}
+                    className="border rounded px-2 py-2 w-full font-mono uppercase text-sm"
+                    placeholder="e.g. SLATE"
+                    maxLength={5}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">RACK TILES</label>
+                  <input 
+                    type="text" 
+                    value={customRackString}
+                    onChange={(e) => setCustomRackString(e.target.value.toUpperCase())}
+                    className="border rounded px-2 py-2 w-full font-mono uppercase text-sm"
+                    placeholder="e.g. ABCDE"
+                  />
+                </div>
+                <button 
+                  onClick={() => {
+                    handleLoadCustomPuzzle();
+                    audioManager.playSfx('UI_click');
+                  }}
+                  className="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600 text-sm"
+                >
+                  Load Custom
+                </button>
+              </div>
+            </div>
+
+            {status !== 'start_screen' && (
+              <>
+                <div className="bg-white p-3 rounded-lg border border-purple-100">
+                  <h4 className="font-bold text-purple-700 mb-2">Select Puzzle</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 30 }).map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          triggerHaptic('light');
+                          audioManager.playSfx('UI_click');
+                          loadPuzzle(idx, currentRackSize);
+                          setIsMenuOpen(false);
+                        }}
+                        className={`
+                          py-2 rounded text-sm font-bold transition-colors
+                          ${currentPuzzleIndex === idx && !isEndlessMode
+                            ? 'bg-amber-500 text-white shadow-md' 
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}
+                        `}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-purple-100">
+                  <h4 className="font-bold text-purple-700 mb-2">
+                    Possible Moves ({possibleMoves ? Object.values(possibleMoves).reduce((a, b: string[]) => a + b.length, 0) : 0})
+                  </h4>
+                  <div className="text-xs font-mono text-slate-600 h-32 overflow-y-auto bg-slate-50 p-2 rounded border border-slate-200">
+                    {possibleMoves !== null 
+                      ? (
+                          Object.values(possibleMoves).some((l: string[]) => l.length > 0) ? (
+                              <div>
+                                  {[5, 4, 3, 2, 1].map(count => {
+                                      const words = possibleMoves[count];
+                                      if (!words || words.length === 0) return null;
+                                      return (
+                                          <div key={count} className="mb-2">
+                                              <div className="font-bold text-slate-400 border-b border-slate-100 mb-1">{count} Tiles</div>
+                                              <div className="leading-relaxed">{words.join(', ')}</div>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          ) : <span className="text-slate-400 italic">No valid moves found</span>
+                      )
+                      : <span className="text-slate-400 italic">Calculating...</span>
+                    }
+                  </div>
+                </div>
+
+                <div className="bg-white p-3 rounded-lg border border-purple-100">
+                  <h4 className="font-bold text-purple-700 mb-2">Solution for Round</h4>
+                  {currentLevel ? (
+                    currentLevel.solution.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="p-2 bg-amber-50 rounded border border-amber-200">
+                          <span className="text-xs font-bold text-slate-400 block">START</span>
+                          <span className="font-mono text-lg font-bold">{currentLevel.startWord}</span>
+                        </div>
+                        {currentLevel.solution.map((step, idx) => (
+                          <div key={idx} className="relative pl-4 border-l-2 border-slate-200">
+                            <div className="text-xs text-slate-500 mb-1">
+                              Step {idx + 1}: Use <span className="font-bold text-amber-600">{step.tilesUsed.join(', ')}</span>
+                            </div>
+                            <div className="p-2 bg-white rounded border border-slate-200 shadow-sm">
+                              <span className="font-mono text-lg font-bold">{step.targetWord.toUpperCase()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div className="text-sm text-slate-500 italic">No pre-calculated solution.</div>
+                  ) : null}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   // --- RENDER HELPERS ---
   
   const getEndGameMessage = () => {
@@ -569,133 +994,53 @@ const App: React.FC = () => {
             <button 
                 onClick={() => {
                   triggerHaptic('light');
+                  audioManager.playSfx('UI_click');
                   setIsMenuOpen(true);
+                  setShowDebug(false);
                 }}
                 className="w-full py-3 bg-white text-slate-500 font-bold rounded-xl border-2 border-slate-200"
             >
-                Debug Menu
+                Settings
             </button>
         </div>
 
-        {/* Start Screen Menu Overlay */}
+        {/* Start Screen Settings Overlay */}
         {isMenuOpen && (
            <div className="fixed inset-0 bg-black/50 z-50 flex justify-start">
              <div className="w-80 bg-white h-full p-6 shadow-2xl overflow-y-auto">
                <div className="flex justify-between items-center mb-6">
-                 <h2 className="text-xl font-bold">Debug Settings</h2>
-                <button onClick={() => {
-                  triggerHaptic('light');
-                  setIsMenuOpen(false);
-                }}>✕</button>
-               </div>
-
-               <div className="mb-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
-                   <h3 className="font-bold text-purple-700 mb-2 flex items-center justify-between">
-                       Endless Mode
-                       <input 
-                           type="checkbox" 
-                           checked={isEndlessMode} 
-                          onChange={(e) => {
-                            triggerHaptic('light');
-                            setIsEndlessMode(e.target.checked);
-                          }}
-                           className="w-5 h-5 accent-purple-600"
-                        />
-                   </h3>
-                   <p className="text-xs text-purple-600">
-                       Clear the rack to earn 5 new letters and keep playing.
-                   </p>
-               </div>
-
-              <div className="mb-4 p-4 bg-slate-100 rounded-xl border border-slate-200">
-                <h3 className="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                  Haptics
-                  <input
-                    type="checkbox"
-                    checked={hapticsEnabled}
-                    onChange={(e) => {
-                      setHapticsEnabled(e.target.checked);
-                      triggerHaptic('light');
-                    }}
-                    className="w-5 h-5 accent-amber-500"
-                  />
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Light taps for buttons; heavier feedback when moving tiles.
-                </p>
-                {hapticsError && (
-                  <p className="text-xs text-red-600 mt-2 break-words">
-                    Haptics error: {hapticsError}
-                  </p>
-                )}
-                <button
-                  onClick={() => triggerHaptic('heavy')}
-                  className="mt-3 w-full bg-slate-800 text-white font-bold py-2 rounded"
+                 <h2 
+                   className="text-xl font-bold cursor-pointer hover:text-amber-600 transition-colors"
+                   onClick={() => {
+                     triggerHaptic('light');
+                     audioManager.playSfx('UI_click');
+                     setShowDebug(!showDebug);
+                   }}
+                   title="Tap to toggle debug tools"
+                 >
+                   Settings
+                 </h2>
+                <button 
+                  onClick={() => {
+                    triggerHaptic('light');
+                    audioManager.playSfx('UI_click');
+                    setIsMenuOpen(false);
+                    setShowDebug(false);
+                  }}
+                  className="p-2 text-slate-500 hover:text-slate-700"
                 >
-                  Test haptic (heavy)
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
-              </div>
-
-               <div className="mb-4">
-                   <h3 className="font-bold text-slate-700 mb-2">Rack Size</h3>
-                   <div className="flex gap-2">
-                   <button onClick={() => handleRackSizeChange(5)} className={`flex-1 py-2 rounded border ${currentRackSize === 5 ? 'bg-amber-500 text-white' : 'bg-white'}`}>5</button>
-                   <button onClick={() => handleRackSizeChange(7)} className={`flex-1 py-2 rounded border ${currentRackSize === 7 ? 'bg-amber-500 text-white' : 'bg-white'}`}>7</button>
-                   </div>
-               </div>
-               
-               <div className="bg-slate-100 p-4 rounded-xl mb-4">
-                <h3 className="font-bold mb-2 text-slate-700">Create Custom Puzzle</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">START WORD (5 Letters)</label>
-                    <input 
-                      type="text" 
-                      value={customStartWord}
-                      onChange={(e) => setCustomStartWord(e.target.value.toUpperCase())}
-                      className="border rounded px-2 py-2 w-full font-mono uppercase"
-                      placeholder="e.g. SLATE"
-                      maxLength={5}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">RACK TILES</label>
-                    <input 
-                      type="text" 
-                      value={customRackString}
-                      onChange={(e) => setCustomRackString(e.target.value.toUpperCase())}
-                      className="border rounded px-2 py-2 w-full font-mono uppercase"
-                      placeholder="e.g. ABCDE"
-                    />
-                  </div>
-                  <button 
-                    onClick={handleLoadCustomPuzzle}
-                    className="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600"
-                  >
-                    Load Custom
-                  </button>
-                </div>
-              </div>
-
-               {/* Build Info at Bottom */}
-               <div className="mt-6 pt-4 border-t border-slate-200">
-                 <div className="text-xs text-slate-400 space-y-1">
-                   {appInfo ? (
-                     <>
-                       <div>Version: {appInfo.version}</div>
-                       <div>Build: {appInfo.build}</div>
-                     </>
-                   ) : appInfoError ? (
-                     <div>App info error: {appInfoError}</div>
-                   ) : (
-                     <div>Loading build info...</div>
-                   )}
-                 </div>
                </div>
 
-               <p className="text-sm text-slate-500 mt-4">Close menu to return to start screen.</p>
+               {renderSettingsPanel()}
              </div>
-             <div className="flex-1" onClick={() => setIsMenuOpen(false)}></div>
+             <div className="flex-1" onClick={() => {
+               setIsMenuOpen(false);
+               setShowDebug(false);
+             }}></div>
            </div>
         )}
       </div>
@@ -707,205 +1052,45 @@ const App: React.FC = () => {
       ref={containerRef}
       className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-between py-8 px-4 no-touch-action select-none"
     >
-      {/* Side Menu Overlay */}
+      {/* In-Game Settings Overlay */}
       {isMenuOpen && (
         <>
           <div 
             className="fixed inset-0 bg-black/50 z-40" 
-            onClick={() => setIsMenuOpen(false)}
+            onClick={() => {
+              setIsMenuOpen(false);
+              setShowDebug(false);
+            }}
           />
           <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-2xl p-6 overflow-y-auto transform transition-transform duration-300 ease-out">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Debug Menu</h2>
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-slate-500 hover:text-slate-700">
+              <h2 
+                className="text-xl font-bold text-slate-800 cursor-pointer hover:text-amber-600 transition-colors"
+                onClick={() => {
+                  triggerHaptic('light');
+                  audioManager.playSfx('UI_click');
+                  setShowDebug(!showDebug);
+                }}
+                title="Tap to toggle debug tools"
+              >
+                Settings
+              </h2>
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowDebug(false);
+                  triggerHaptic('light');
+                  audioManager.playSfx('UI_click');
+                }} 
+                className="p-2 text-slate-500 hover:text-slate-700"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="space-y-6">
-              
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                   <h3 className="font-bold text-purple-700 mb-2 flex items-center justify-between">
-                       Endless Mode
-                       <input 
-                           type="checkbox" 
-                           checked={isEndlessMode} 
-                           onChange={(e) => {
-                             triggerHaptic('light');
-                             setIsEndlessMode(e.target.checked);
-                           }}
-                           className="w-5 h-5 accent-purple-600"
-                        />
-                   </h3>
-                   <p className="text-xs text-purple-600">
-                       Streak: {streak}
-                   </p>
-               </div>
-
-              <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
-                <h3 className="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                  Haptics
-                  <input
-                    type="checkbox"
-                    checked={hapticsEnabled}
-                    onChange={(e) => {
-                      setHapticsEnabled(e.target.checked);
-                      triggerHaptic('light');
-                    }}
-                    className="w-5 h-5 accent-amber-500"
-                  />
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Light taps for buttons; heavier feedback when moving tiles.
-                </p>
-              </div>
-
-              <div className="bg-slate-100 p-4 rounded-xl">
-                 <h3 className="font-bold mb-2 text-slate-700">Rack Size</h3>
-                 <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleRackSizeChange(5)}
-                      className={`flex-1 py-2 rounded font-bold border transition-colors ${currentRackSize === 5 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
-                    >
-                      5 Tiles
-                    </button>
-                    <button 
-                      onClick={() => handleRackSizeChange(7)}
-                      className={`flex-1 py-2 rounded font-bold border transition-colors ${currentRackSize === 7 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
-                    >
-                      7 Tiles
-                    </button>
-                 </div>
-              </div>
-
-              <div className="bg-slate-100 p-4 rounded-xl">
-                <h3 className="font-bold mb-2 text-slate-700">Create Custom Puzzle</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">START WORD (5 Letters)</label>
-                    <input 
-                      type="text" 
-                      value={customStartWord}
-                      onChange={(e) => setCustomStartWord(e.target.value.toUpperCase())}
-                      className="border rounded px-2 py-2 w-full font-mono uppercase"
-                      placeholder="e.g. SLATE"
-                      maxLength={5}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">RACK TILES</label>
-                    <input 
-                      type="text" 
-                      value={customRackString}
-                      onChange={(e) => setCustomRackString(e.target.value.toUpperCase())}
-                      className="border rounded px-2 py-2 w-full font-mono uppercase"
-                      placeholder="e.g. ABCDE"
-                    />
-                  </div>
-                  <button 
-                    onClick={handleLoadCustomPuzzle}
-                    className="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600"
-                  >
-                    Load Custom
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-slate-100 p-4 rounded-xl">
-                <h3 className="font-bold mb-2 text-slate-700">Select Puzzle</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 30 }).map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                          triggerHaptic('light');
-                          loadPuzzle(idx, currentRackSize);
-                          setIsMenuOpen(false);
-                      }}
-                      className={`
-                        py-2 rounded text-sm font-bold transition-colors
-                        ${currentPuzzleIndex === idx && !isEndlessMode
-                          ? 'bg-amber-500 text-white shadow-md' 
-                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}
-                      `}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-slate-100 p-4 rounded-xl">
-                <h3 className="font-bold mb-2 text-slate-700">
-                    Possible Moves ({possibleMoves ? Object.values(possibleMoves).reduce((a, b: string[]) => a + b.length, 0) : 0})
-                </h3>
-                <div className="text-xs font-mono text-slate-600 h-32 overflow-y-auto bg-white p-2 rounded border border-slate-200">
-                  {possibleMoves !== null 
-                    ? (
-                        Object.values(possibleMoves).some((l: string[]) => l.length > 0) ? (
-                            <div>
-                                {[5, 4, 3, 2, 1].map(count => {
-                                    const words = possibleMoves[count];
-                                    if (!words || words.length === 0) return null;
-                                    return (
-                                        <div key={count} className="mb-2">
-                                            <div className="font-bold text-slate-400 border-b border-slate-100 mb-1">{count} Tiles</div>
-                                            <div className="leading-relaxed">{words.join(', ')}</div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : <span className="text-slate-400 italic">No valid moves found</span>
-                    )
-                    : <span className="text-slate-400 italic">Calculating...</span>
-                  }
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-bold mb-2 text-slate-700">Solution for Round</h3>
-                
-                {currentLevel ? (
-                  currentLevel.solution.length > 0 ? (
-                    <div className="space-y-4">
-                        <div className="p-2 bg-amber-50 rounded border border-amber-200">
-                        <span className="text-xs font-bold text-slate-400 block">START</span>
-                        <span className="font-mono text-lg font-bold">{currentLevel.startWord}</span>
-                        </div>
-
-                        {currentLevel.solution.map((step, idx) => (
-                        <div key={idx} className="relative pl-4 border-l-2 border-slate-200">
-                            <div className="text-xs text-slate-500 mb-1">
-                            Step {idx + 1}: Use <span className="font-bold text-amber-600">{step.tilesUsed.join(', ')}</span>
-                            </div>
-                            <div className="p-2 bg-white rounded border border-slate-200 shadow-sm">
-                            <span className="font-mono text-lg font-bold">{step.targetWord.toUpperCase()}</span>
-                            </div>
-                        </div>
-                        ))}
-                    </div>
-                  ) : <div className="text-sm text-slate-500 italic">No pre-calculated solution.</div>
-                ) : null}
-              </div>
-
-              {/* Build Info at Bottom */}
-              <div className="mt-6 pt-4 border-t border-slate-200">
-                <div className="text-xs text-slate-400 space-y-1">
-                  {appInfo ? (
-                    <>
-                      <div>Version: {appInfo.version}</div>
-                      <div>Build: {appInfo.build}</div>
-                    </>
-                  ) : appInfoError ? (
-                    <div>App info error: {appInfoError}</div>
-                  ) : (
-                    <div>Loading build info...</div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {renderSettingsPanel()}
           </div>
         </>
       )}
@@ -915,7 +1100,9 @@ const App: React.FC = () => {
         <button 
           onClick={() => {
             triggerHaptic('light');
+            audioManager.playSfx('UI_click');
             setIsMenuOpen(true);
+            setShowDebug(false);
           }}
           className="p-2 -ml-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
         >
@@ -965,6 +1152,7 @@ const App: React.FC = () => {
                         <button 
                             onClick={() => {
                                 triggerHaptic('light');
+                                audioManager.playSfx('UI_click');
                                 loadPuzzle(currentPuzzleIndex, currentRackSize);
                             }}
                             className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200"
@@ -977,6 +1165,7 @@ const App: React.FC = () => {
                         <button 
                             onClick={() => {
                                 triggerHaptic('light');
+                                audioManager.playSfx('UI_click');
                                 handleContinueStreak();
                             }}
                             className="flex-[2] py-3 bg-purple-500 text-white rounded-xl font-bold shadow-md hover:bg-purple-600"
@@ -987,6 +1176,7 @@ const App: React.FC = () => {
                         <button 
                             onClick={() => {
                                 triggerHaptic('light');
+                                audioManager.playSfx('UI_click');
                                 if (isEndlessMode) {
                                     handleStartGame(); // Restart endless run
                                 } else {

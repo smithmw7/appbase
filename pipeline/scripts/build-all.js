@@ -32,6 +32,14 @@ const scriptsDir = path.join(__dirname);
 const rootDir = path.resolve(__dirname, '../..');
 
 try {
+  // Step 0: Sync audio assets
+  console.log('🎵 Step 0: Syncing audio assets...');
+  execSync(`node "${path.join(scriptsDir, 'sync-audio-assets.js')}"`, {
+    cwd: rootDir,
+    stdio: 'inherit',
+    shell: true
+  });
+
   // Step 1: Build content
   console.log('📦 Step 1: Building content...');
   execSync(`node "${path.join(scriptsDir, 'build-content.js')}" ${target}`, {
