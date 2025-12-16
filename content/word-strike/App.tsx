@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [appInfo, setAppInfo] = useState<{ version: string; build: number } | null>(null);
   const [appInfoError, setAppInfoError] = useState<string | null>(null);
   const [hapticsError, setHapticsError] = useState<string | null>(null);
+  const [undoJustUsed, setUndoJustUsed] = useState(false);
   
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
@@ -90,6 +91,7 @@ const App: React.FC = () => {
     setWordHistory([]); // Reset history
     setPossibleMoves(null); // Reset moves
     setStreak(0); // Reset streak on new standard puzzle
+    setUndoJustUsed(false); // Reset undo state
     
     // Small delay to allow UI to show loading
     setTimeout(() => {
@@ -117,6 +119,7 @@ const App: React.FC = () => {
         setRackTiles(level.rackTiles);
         setWordHistory([level.startWord]); // Start history with the initial word
         setStatus('playing');
+        setUndoJustUsed(false); // Ensure undo is reset when game starts
       }
     }, 100);
   }, [customLevelData]);
@@ -159,6 +162,7 @@ const App: React.FC = () => {
     setStatus('loading');
     setPossibleMoves(null);
     setWordHistory([]); // Reset visual history for the new round
+    setUndoJustUsed(false); // Reset undo state for new round
     
     setTimeout(() => {
         // Generate next round based on CURRENT board word
@@ -174,10 +178,12 @@ const App: React.FC = () => {
             setWordHistory([currentWord]);
             setStreak(prev => prev + 1);
             setStatus('playing');
+            setUndoJustUsed(false); // Ensure undo is reset when round starts
         } else {
             // Generator failed (dead end?)
             alert("No more valid puzzles found from this word! Streak ended.");
             setStatus('lost');
+            setUndoJustUsed(false); // Reset on game over
         }
     }, 100);
   };
@@ -206,6 +212,7 @@ const App: React.FC = () => {
     setStatus('loading');
     setWordHistory([]);
     setPossibleMoves(null);
+    setUndoJustUsed(false); // Reset undo state
 
     setTimeout(() => {
         // Construct a partial LevelData object
@@ -231,6 +238,7 @@ const App: React.FC = () => {
         setRackTiles(level.rackTiles);
         setWordHistory([cleanWord]);
         setStatus('playing');
+        setUndoJustUsed(false); // Ensure undo is reset when custom puzzle starts
         setIsMenuOpen(false);
     }, 100);
   };
@@ -265,9 +273,17 @@ const App: React.FC = () => {
        const totalMoves = Object.values(possibleMoves).reduce((acc, curr: string[]) => acc + curr.length, 0);
        if (totalMoves === 0) {
          setStatus('lost');
+         setUndoJustUsed(false); // Reset undo state on game over
        }
     }
   }, [possibleMoves, status, rackTiles.length]);
+  
+  // Reset undo state when game status changes to non-playing states
+  useEffect(() => {
+    if (status === 'won' || status === 'lost' || status === 'round_won' || status === 'start_screen') {
+      setUndoJustUsed(false);
+    }
+  }, [status]);
 
 
   // Input Handlers
@@ -428,6 +444,9 @@ const App: React.FC = () => {
       // Update history
       setWordHistory(prev => [...prev, candidateWord.toUpperCase()]);
       
+      // Reset undo state after successful submit
+      setUndoJustUsed(false);
+      
       triggerHaptic('success');
       if (rackTiles.length === 0) {
         if (isEndlessMode) {
@@ -435,6 +454,8 @@ const App: React.FC = () => {
         } else {
             setStatus('won');
         }
+        // Reset undo state on game end
+        setUndoJustUsed(false);
       }
     } else {
       setShake(true);
@@ -450,6 +471,9 @@ const App: React.FC = () => {
       });
       setBoardSlots(newSlots);
       setRackTiles(prev => [...prev, ...tilesToReturn]);
+      
+      // Reset undo state after invalid submit (tiles returned to rack)
+      setUndoJustUsed(false);
       
       triggerHaptic('error');
     }
@@ -468,6 +492,12 @@ const App: React.FC = () => {
   };
 
   const handleUndo = () => {
+    // Only allow undo if there are staged tiles and undo wasn't just used
+    const hasStagedTiles = boardSlots.some(s => s.stagedTile);
+    if (!hasStagedTiles || undoJustUsed) {
+      return;
+    }
+    
     triggerHaptic('light');
     const tilesToReturn: TileData[] = [];
     const newSlots = boardSlots.map(s => {
@@ -479,7 +509,17 @@ const App: React.FC = () => {
     });
     setBoardSlots(newSlots);
     setRackTiles(prev => [...prev, ...tilesToReturn]);
+    
+    // Mark undo as just used - button will be disabled until tiles are staged again
+    setUndoJustUsed(true);
   };
+  
+  // Re-enable undo button when tiles are staged again
+  useEffect(() => {
+    if (undoJustUsed && boardSlots.some(s => s.stagedTile)) {
+      setUndoJustUsed(false);
+    }
+  }, [boardSlots, undoJustUsed]);
 
   const renderTile = (tile: TileData, isDragProxy = false) => (
     <div 
@@ -1028,7 +1068,7 @@ const App: React.FC = () => {
       <div className="w-full max-w-md flex gap-4 mt-auto pt-8">
         <button 
           onClick={handleUndo}
-          disabled={!boardSlots.some(s => s.stagedTile)}
+          disabled={!boardSlots.some(s => s.stagedTile) || undoJustUsed}
           className="flex-1 py-4 rounded-xl bg-slate-200 text-slate-600 font-bold uppercase tracking-wider disabled:opacity-50 active:bg-slate-300 transition-colors"
         >
           Undo

@@ -57,9 +57,20 @@ try {
   });
 
   console.log(`\n✅ Build completed successfully for ${target}!`);
-  console.log(`\nNext steps:`);
-  console.log(`  1. Open Xcode: cd container && npx cap open ios`);
-  console.log(`  2. Build and run the app`);
+  
+  // Step 4: Open Xcode
+  console.log(`\n🚀 Step 4: Opening Xcode...`);
+  try {
+    const containerDir = path.resolve(__dirname, '../../container');
+    execSync('npx cap open ios', {
+      cwd: containerDir,
+      stdio: 'inherit',
+      shell: true
+    });
+    console.log(`✓ Xcode opened`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to open Xcode automatically. You can open it manually with: cd container && npx cap open ios`);
+  }
 } catch (error) {
   console.error(`\n❌ Build failed for ${target}`);
   process.exit(1);
