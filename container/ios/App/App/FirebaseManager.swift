@@ -36,24 +36,27 @@ import FirebaseFirestore
             "revenue_cat_api_key": "" as NSString,
             "remove_ads_product_id": "" as NSString,
             "app_version": "1.0.0" as NSString,
-            "maintenance_mode": false as NSObject
+            "maintenance_mode": false as NSObject,
+            "puzzle_data_url": "" as NSString,
+            "puzzle_data_version": "" as NSString,
+            "min_app_version": "1.0.0" as NSString
         ]
         remoteConfig?.setDefaults(defaults)
 
         // Configure Remote Config settings
-        let settings = RemoteConfigSettings()
-        settings.minimumFetchInterval = 3600 // Fetch at most once per hour
-        remoteConfig?.configSettings = settings
+        let remoteConfigSettings = RemoteConfigSettings()
+        remoteConfigSettings.minimumFetchInterval = 3600 // Fetch at most once per hour
+        remoteConfig?.configSettings = remoteConfigSettings
 
         // Fetch Remote Config values
         fetchRemoteConfig()
 
         // Initialize Firestore with offline persistence
         let db = Firestore.firestore()
-        let settings = FirestoreSettings()
-        settings.isPersistenceEnabled = true
-        settings.cacheSizeBytes = FirestoreCacheSizeUnlimited
-        db.settings = settings
+        let firestoreSettings = FirestoreSettings()
+        firestoreSettings.isPersistenceEnabled = true
+        firestoreSettings.cacheSizeBytes = FirestoreCacheSizeUnlimited
+        db.settings = firestoreSettings
         self.firestore = db
 
         isInitialized = true
@@ -97,6 +100,48 @@ import FirebaseFirestore
     /// Get a Remote Config value as Number
     @objc public func getRemoteConfigNumber(_ key: String) -> NSNumber {
         return remoteConfig?.configValue(forKey: key).numberValue ?? 0
+    }
+
+    // MARK: - Remote Config Puzzle Data
+
+    /// Fetch Remote Config and call completion when done
+    /// - Parameter completion: Callback with success boolean and error message
+    @objc public func fetchRemoteConfigAsync(completion: @escaping (Bool, String?) -> Void) {
+        remoteConfig?.fetch { [weak self] (status, error) in
+            if status == .success {
+                self?.remoteConfig?.activate { (changed, error) in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            } else if let error = error {
+                completion(false, error.localizedDescription)
+            } else {
+                completion(false, "Unknown error fetching Remote Config")
+            }
+        }
+    }
+
+    /// Get puzzle data URL from Remote Config
+    /// - Returns: URL string or nil if not configured
+    @objc public func getPuzzleDataUrl() -> String? {
+        guard let remoteConfig = remoteConfig else {
+            return nil
+        }
+        let url = remoteConfig.configValue(forKey: "puzzle_data_url").stringValue
+        return url.isEmpty == false ? url : nil
+    }
+
+    /// Get puzzle data version from Remote Config
+    /// - Returns: Version string or nil if not configured
+    @objc public func getPuzzleDataVersion() -> String? {
+        guard let remoteConfig = remoteConfig else {
+            return nil
+        }
+        let version = remoteConfig.configValue(forKey: "puzzle_data_version").stringValue
+        return version.isEmpty == false ? version : nil
     }
 
     // MARK: - Authentication
@@ -144,7 +189,7 @@ import FirebaseFirestore
             } else if let dictValue = value as? [String: Any] {
                 firestoreData[key] = convertToFirestoreData(dictValue)
             } else if let arrayValue = value as? [Any] {
-                firestoreData[key] = arrayValue.map { item in
+                firestoreData[key] = arrayValue.map { item -> Any in
                     if let dictItem = item as? [String: Any] {
                         return convertToFirestoreData(dictItem)
                     }
@@ -170,7 +215,7 @@ import FirebaseFirestore
             } else if let dictValue = value as? [String: Any] {
                 plainData[key] = convertFromFirestoreData(dictValue)
             } else if let arrayValue = value as? [Any] {
-                plainData[key] = arrayValue.map { item in
+                plainData[key] = arrayValue.map { item -> Any in
                     if let dictItem = item as? [String: Any] {
                         return convertFromFirestoreData(dictItem)
                     }
@@ -235,7 +280,7 @@ import FirebaseFirestore
 
             if let data = document.data() {
                 // Convert Firestore data to plain dictionary
-                let plainData = self?.convertFromFirestoreData(data) ?? data
+                let plainData = self.convertFromFirestoreData(data)
                 completion(plainData, nil)
             } else {
                 completion(nil, "Document exists but has no data")
@@ -249,7 +294,7 @@ import FirebaseFirestore
     ///   - localData: Local player data dictionary
     ///   - completion: Callback with merged data dictionary or error message
     @objc public func syncPlayerData(userId: String, localData: [String: Any], completion: @escaping ([String: Any]?, String?) -> Void) {
-        loadPlayerData(userId: userId) { [weak self] remoteData, error in
+        loadPlayerData(userId: userId) { remoteData, error in
             if let error = error {
                 completion(nil, error)
                 return
@@ -258,7 +303,7 @@ import FirebaseFirestore
             // If no remote data, use local data
             guard let remoteData = remoteData else {
                 // Save local data to Firestore
-                self?.savePlayerData(userId: userId, data: localData) { success, saveError in
+                self.savePlayerData(userId: userId, data: localData) { success, saveError in
                     if success {
                         completion(localData, nil)
                     } else {
@@ -402,7 +447,7 @@ import FirebaseFirestore
             }
 
             // Save merged data
-            self?.savePlayerData(userId: userId, data: merged) { success, saveError in
+            self.savePlayerData(userId: userId, data: merged) { success, saveError in
                 if success {
                     completion(merged, nil)
                 } else {

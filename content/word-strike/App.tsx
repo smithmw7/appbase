@@ -9,6 +9,9 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { audioManager } from './audio/AudioManager';
 import { playerDataManager } from './data/PlayerDataManager';
 import { firebaseSyncManager } from './data/FirebaseSyncManager';
+import { puzzleDataManager } from './data/PuzzleDataManager';
+import { remotePuzzleLoader } from './data/RemotePuzzleLoader';
+import { refreshPremadePuzzles } from './assets';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('start_screen');
@@ -43,6 +46,25 @@ const App: React.FC = () => {
   const playTimeRef = useRef<number>(0);
   const playTimeIntervalRef = useRef<number | null>(null);
   
+  // Puzzle version state for debug panel
+  const [puzzleVersion, setPuzzleVersion] = useState(() => {
+    try {
+      return puzzleDataManager.getVersion();
+    } catch {
+      return {
+        version: 'unknown',
+        timestamp: new Date().toISOString(),
+        source: 'local' as const,
+        puzzleCount: 0,
+        rackSizes: [],
+      };
+    }
+  });
+  
+  // Auth state for debug panel
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
   
@@ -75,35 +97,71 @@ const App: React.FC = () => {
     fetchAppInfo();
   }, []);
 
-  // Initialize player data and Firebase sync on app mount
+  // Initialize puzzle data, player data, and Firebase sync on app mount
   useEffect(() => {
     let isMounted = true;
 
     const initializeData = async () => {
       try {
-        // Initialize Firebase auth and get user ID
+        // 1. Initialize puzzle data FIRST (non-blocking, loads from cache or bundled)
+        console.log('[App] Initializing puzzle data...');
+        await puzzleDataManager.initialize();
+        if (isMounted) {
+          setPuzzleVersion(puzzleDataManager.getVersion());
+        }
+        console.log('[App] Puzzle data initialized:', puzzleDataManager.getVersion().source);
+
+        // 2. Initialize Firebase auth and get user ID
+        console.log('[App] Initializing Firebase auth...');
         const userId = await firebaseSyncManager.initialize();
         if (!userId) {
           console.warn('Failed to initialize Firebase auth, using local-only mode');
           // Generate local UUID as fallback
           const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           await playerDataManager.initialize(localId);
-          return;
+          if (isMounted) {
+            setAuthUserId(localId);
+          }
+        } else {
+          // Initialize player data with user ID
+          await playerDataManager.initialize(userId);
+          if (isMounted) {
+            setAuthUserId(userId);
+          }
+
+          // Perform initial sync
+          await firebaseSyncManager.performInitialSync();
+          if (isMounted) {
+            setLastSyncTime(new Date().toLocaleTimeString());
+          }
+
+          // Start periodic sync
+          firebaseSyncManager.startPeriodicSync();
         }
-
-        // Initialize player data with user ID
-        await playerDataManager.initialize(userId);
-
-        // Perform initial sync
-        await firebaseSyncManager.performInitialSync();
-
-        // Start periodic sync
-        firebaseSyncManager.startPeriodicSync();
 
         // Start activity session
         playerDataManager.startSession();
+
+        // 3. Game is ready - all critical data loaded
+        console.log('[App] Game ready!');
+
+        // 4. Background: Check for puzzle updates (non-blocking)
+        console.log('[App] Checking for puzzle updates in background...');
+        remotePuzzleLoader.checkForUpdates(false).then(() => {
+          console.log('[App] Puzzle update check complete');
+          if (isMounted) {
+            const newVersion = puzzleDataManager.getVersion();
+            setPuzzleVersion(newVersion);
+            if (puzzleDataManager.hasPendingUpdate()) {
+              console.log('[App] Puzzle update is pending (will apply on next puzzle load)');
+            }
+          }
+        }).catch((error) => {
+          console.warn('[App] Puzzle update check failed:', error);
+        });
+
       } catch (error) {
-        console.error('Failed to initialize player data:', error);
+        console.error('Failed to initialize app data:', error);
       }
     };
 
@@ -196,6 +254,17 @@ const App: React.FC = () => {
     setPossibleMoves(null); // Reset moves
     setStreak(0); // Reset streak on new standard puzzle
     setUndoJustUsed(false); // Reset undo state
+    
+    // Apply any pending puzzle update when loading new puzzle
+    if (puzzleDataManager.hasPendingUpdate()) {
+      puzzleDataManager.applyPendingUpdate().then((applied) => {
+        if (applied) {
+          console.log('[App] Applied pending puzzle update');
+          setPuzzleVersion(puzzleDataManager.getVersion());
+          refreshPremadePuzzles();
+        }
+      }).catch(console.error);
+    }
     
     // Track puzzle start
     if (index >= 0) {
@@ -930,6 +999,134 @@ const App: React.FC = () => {
           <h3 className="font-bold text-purple-700 mb-4">Debug Tools</h3>
           
           <div className="space-y-4">
+            {/* Puzzle Data Version */}
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-semibold text-purple-700 mb-2">Puzzle Data</h4>
+              <div className="text-xs text-slate-600 space-y-1">
+                <div className="flex justify-between">
+                  <span className="font-medium">Version:</span>
+                  <span className="font-mono">{puzzleVersion.version.slice(0, 12)}...</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Source:</span>
+                  <span className="capitalize">{puzzleVersion.source}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Count:</span>
+                  <span>{puzzleVersion.puzzleCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Updated:</span>
+                  <span>{new Date(puzzleVersion.timestamp).toLocaleTimeString()}</span>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  triggerHaptic('light');
+                  audioManager.playSfx('UI_click');
+                  console.log('[Debug] Checking for puzzle updates...');
+                  try {
+                    await remotePuzzleLoader.checkForUpdates(status === 'playing');
+                    const newVersion = puzzleDataManager.getVersion();
+                    setPuzzleVersion(newVersion);
+                    console.log('[Debug] Update check complete');
+                  } catch (error) {
+                    console.error('[Debug] Update check failed:', error);
+                  }
+                }}
+                className="w-full mt-2 px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors"
+              >
+                Check for Updates
+              </button>
+            </div>
+
+            {/* Auth Status */}
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-semibold text-purple-700 mb-2">Authentication</h4>
+              <div className="text-xs text-slate-600 space-y-1">
+                <div className="flex justify-between">
+                  <span className="font-medium">User ID:</span>
+                  <span className="font-mono text-xs">{authUserId ? authUserId.slice(0, 12) + '...' : 'Not set'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Status:</span>
+                  <span>{authUserId ? '✅ Signed In' : '❌ Not signed in'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Last Sync:</span>
+                  <span>{lastSyncTime || 'Never'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Player Data Controls */}
+            <div className="bg-white p-3 rounded-lg border border-purple-100">
+              <h4 className="font-semibold text-purple-700 mb-2">Player Data</h4>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    audioManager.playSfx('UI_click');
+                    try {
+                      const playerData = playerDataManager.getPlayerData();
+                      console.log('[Debug] Player Data:', JSON.stringify(playerData, null, 2));
+                      alert('Player data printed to console (check Xcode logs)');
+                    } catch (error) {
+                      console.error('[Debug] Failed to get player data:', error);
+                      alert('Failed to get player data: ' + error);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-green-500 text-white text-sm font-medium rounded hover:bg-green-600 transition-colors"
+                >
+                  Print Player Data to Console
+                </button>
+                <button
+                  onClick={async () => {
+                    triggerHaptic('medium');
+                    audioManager.playSfx('UI_click');
+                    if (confirm('Clear ALL player data? This cannot be undone!')) {
+                      try {
+                        // Clear local storage
+                        const plugin = (window as any).LocalStorage;
+                        if (plugin) {
+                          await plugin.savePlayerData({ data: null });
+                        }
+                        console.log('[Debug] Player data cleared');
+                        alert('Player data cleared successfully');
+                      } catch (error) {
+                        console.error('[Debug] Failed to clear player data:', error);
+                        alert('Failed to clear player data: ' + error);
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-red-500 text-white text-sm font-medium rounded hover:bg-red-600 transition-colors"
+                >
+                  Clear All Player Data
+                </button>
+                <button
+                  onClick={async () => {
+                    triggerHaptic('medium');
+                    audioManager.playSfx('UI_click');
+                    if (confirm('Clear puzzle cache? Game will reload bundled puzzles.')) {
+                      try {
+                        await puzzleDataManager.clearCache();
+                        const newVersion = puzzleDataManager.getVersion();
+                        setPuzzleVersion(newVersion);
+                        refreshPremadePuzzles();
+                        console.log('[Debug] Puzzle cache cleared');
+                        alert('Puzzle cache cleared successfully');
+                      } catch (error) {
+                        console.error('[Debug] Failed to clear puzzle cache:', error);
+                        alert('Failed to clear puzzle cache: ' + error);
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded hover:bg-orange-600 transition-colors"
+                >
+                  Clear Puzzle Cache
+                </button>
+              </div>
+            </div>
             <div className="bg-white p-3 rounded-lg border border-purple-100">
               <h4 className="font-bold text-purple-700 mb-2 flex items-center justify-between">
                 Endless Mode

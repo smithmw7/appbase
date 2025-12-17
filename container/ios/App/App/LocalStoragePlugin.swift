@@ -178,58 +178,6 @@ public class LocalStoragePlugin: CAPPlugin {
         call.resolve()
     }
 
-    @objc func updatePlayerStats(_ call: CAPPluginCall) {
-        guard let stats = call.getObject("stats") else {
-            call.reject("stats is required")
-            return
-        }
-
-        // Load existing player data
-        var playerData: [String: Any] = [:]
-        if let data = defaults.data(forKey: "player_data"),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            playerData = json
-        }
-
-        // Initialize stats if needed
-        if playerData["stats"] == nil {
-            playerData["stats"] = [String: Any]()
-        }
-        var statsDict = playerData["stats"] as? [String: Any] ?? [:]
-
-        // Update stats
-        if let value = stats["totalPuzzlesCompleted"] as? Int {
-            statsDict["totalPuzzlesCompleted"] = value
-        }
-        if let value = stats["totalPuzzlesAttempted"] as? Int {
-            statsDict["totalPuzzlesAttempted"] = value
-        }
-        if let value = stats["currentStreak"] as? Int {
-            statsDict["currentStreak"] = value
-        }
-        if let value = stats["maxStreak"] as? Int {
-            statsDict["maxStreak"] = value
-        }
-        if let value = stats["totalPlayTime"] as? Int {
-            statsDict["totalPlayTime"] = value
-        }
-        if let value = stats["lastPlayedAt"] as? String {
-            statsDict["lastPlayedAt"] = value
-        }
-        if let value = stats["firstPlayedAt"] as? String {
-            statsDict["firstPlayedAt"] = value
-        }
-
-        playerData["stats"] = statsDict
-
-        // Save back
-        if let jsonData = try? JSONSerialization.data(withJSONObject: playerData) {
-            defaults.set(jsonData, forKey: "player_data")
-            call.resolve()
-        } else {
-            call.reject("failed to save player data")
-        }
-    }
 
     @objc func updatePuzzleProgress(_ call: CAPPluginCall) {
         guard let puzzleId = call.getString("puzzleId"),
@@ -336,5 +284,34 @@ public class LocalStoragePlugin: CAPPlugin {
         } else {
             call.reject("failed to save activity")
         }
+    }
+
+    // MARK: - Puzzle Cache
+
+    @objc func getPuzzleCache(_ call: CAPPluginCall) {
+        guard let data = defaults.data(forKey: "puzzle_cache"),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            call.resolve(["data": NSNull()])
+            return
+        }
+        call.resolve(["data": json])
+    }
+
+    @objc func savePuzzleCache(_ call: CAPPluginCall) {
+        guard let data = call.getObject("data") else {
+            call.reject("data is required")
+            return
+        }
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: data) else {
+            call.reject("failed to serialize puzzle cache")
+            return
+        }
+        defaults.set(jsonData, forKey: "puzzle_cache")
+        call.resolve()
+    }
+
+    @objc func clearPuzzleCache(_ call: CAPPluginCall) {
+        defaults.removeObject(forKey: "puzzle_cache")
+        call.resolve()
     }
 }

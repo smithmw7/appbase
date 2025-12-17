@@ -1,22 +1,66 @@
 
 import { LevelData, TileData, SolutionStep } from './types';
 import { generateLevel } from './gameLogic';
+import { puzzleDataManager } from './data/PuzzleDataManager';
+import type { RawPuzzleData } from './types/PuzzleData';
 
-// Hardcoded data from puzzles.json
-const PREMADE_PUZZLES_SOURCE = [
-  {
-    "start": "about",
-    "rack": ["e", "n", "s", "h", "r"],
-    "path": ["abort", "snort", "short", "shore"],
-    "endWord": "shore"
-  },
-  {
-    "start": "dance",
-    "rack": ["s", "r", "l", "u", "g"],
-    "path": ["lance", "lunge", "lungs", "rungs"],
-    "endWord": "rungs"
+// Load puzzles dynamically from PuzzleDataManager
+function loadPremadePuzzles(): Array<{ start: string; rack: string[]; path: string[]; endWord: string }> {
+  try {
+    const rawPuzzles = puzzleDataManager.getActivePuzzles();
+    
+    // Convert first 2 puzzles to the format we need
+    const converted = rawPuzzles.slice(0, 2).map((puzzle: RawPuzzleData) => {
+      // Get the best solution path (prefer S_4, then S_3, etc.)
+      let path: string[] = [];
+      if (puzzle.S_4 && puzzle.S_4.length > 0) {
+        path = puzzle.S_4[0];
+      } else if (puzzle.S_3 && puzzle.S_3.length > 0) {
+        path = puzzle.S_3[0];
+      } else if (puzzle.S_2 && puzzle.S_2.length > 0) {
+        path = puzzle.S_2[0];
+      }
+      
+      return {
+        start: puzzle.start,
+        rack: puzzle.rack,
+        path: path,
+        endWord: path.length > 0 ? path[path.length - 1] : puzzle.start
+      };
+    });
+    
+    return converted;
+  } catch (error) {
+    console.warn('[Assets] Failed to load puzzles from manager, using fallback:', error);
+    // Fallback to hardcoded puzzles
+    return [
+      {
+        "start": "about",
+        "rack": ["e", "n", "s", "h", "r"],
+        "path": ["abort", "snort", "short", "shore"],
+        "endWord": "shore"
+      },
+      {
+        "start": "dance",
+        "rack": ["s", "r", "l", "u", "g"],
+        "path": ["lance", "lunge", "lungs", "rungs"],
+        "endWord": "rungs"
+      }
+    ];
   }
-];
+}
+
+// Get premade puzzles (this will be refreshed when puzzles update)
+let PREMADE_PUZZLES_SOURCE = loadPremadePuzzles();
+
+// Export function to refresh puzzles (called after remote update)
+export function refreshPremadePuzzles(): void {
+  PREMADE_PUZZLES_SOURCE = loadPremadePuzzles();
+  // Clear banks to force regeneration
+  PUZZLE_BANK_5 = [];
+  PUZZLE_BANK_7 = [];
+  console.log('[Assets] Premade puzzles refreshed');
+}
 
 // Helper to convert simple string paths into the game's SolutionStep format
 function convertPathToSolution(startWord: string, path: string[]): SolutionStep[] {
