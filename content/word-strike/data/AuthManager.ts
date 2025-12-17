@@ -22,6 +22,11 @@ interface FirebaseAuthPlugin {
   signUpWithEmail(options: { email: string; password: string }): Promise<{ userId: string }>;
   signInWithEmail(options: { email: string; password: string }): Promise<{ userId: string }>;
   linkAnonymousToEmail(options: { email: string; password: string }): Promise<{ userId: string; linked: boolean }>;
+  signInWithApple(options: {}): Promise<{ userId: string }>;
+  linkAnonymousToApple(options: {}): Promise<{ userId: string; linked: boolean }>;
+  sendSignInLink(options: { email: string }): Promise<{ success: boolean }>;
+  signInWithEmailLink(options: { email: string; link: string }): Promise<{ userId: string }>;
+  linkAnonymousToEmailLink(options: { email: string; link: string }): Promise<{ userId: string; linked: boolean }>;
   signOut(): Promise<{ success: boolean }>;
   getUserInfo(): Promise<{ userInfo: any | null }>;
   sendPasswordReset(options: { email: string }): Promise<{ success: boolean }>;
@@ -174,6 +179,113 @@ class AuthManager {
   }
 
   /**
+   * Sign in with Apple
+   * If user is anonymous, automatically link the account
+   */
+  async signInWithApple(): Promise<void> {
+    try {
+      if (this.currentUser?.isAnonymous) {
+        // Link anonymous account instead of creating new one
+        console.log('[AuthManager] Linking anonymous account to Apple');
+        const result = await FirebaseAuth.linkAnonymousToApple({});
+        console.log('[AuthManager] Apple account linked successfully:', result.userId);
+        
+        // Reload user info
+        await this.loadUserInfo();
+        
+        // Trigger Firebase sync for the linked account
+        if (this.currentUser && !this.currentUser.isAnonymous) {
+          await firebaseSyncManager.performInitialSync();
+          console.log('[AuthManager] Firebase sync completed after Apple linking');
+        }
+      } else {
+        // Normal sign in
+        console.log('[AuthManager] Signing in with Apple');
+        const result = await FirebaseAuth.signInWithApple({});
+        console.log('[AuthManager] Apple sign in successful:', result.userId);
+        
+        // Reload user info
+        await this.loadUserInfo();
+        
+        // Initialize player data and sync
+        if (this.currentUser) {
+          await playerDataManager.initialize(this.currentUser.uid);
+          await firebaseSyncManager.performInitialSync();
+          firebaseSyncManager.startPeriodicSync();
+        }
+      }
+    } catch (error: any) {
+      console.error('[AuthManager] Apple sign in failed:', error);
+      
+      // Handle user cancellation gracefully
+      if (error.message?.includes('cancel') || error.message?.includes('cancelled')) {
+        throw new Error('Sign in cancelled');
+      }
+      
+      throw this.formatError(error);
+    }
+  }
+
+  /**
+   * Send one-time sign-in link to email
+   */
+  async sendSignInLink(email: string): Promise<void> {
+    try {
+      console.log('[AuthManager] Sending sign-in link to:', email);
+      await FirebaseAuth.sendSignInLink({ email });
+      
+      // Store email in localStorage for link verification
+      localStorage.setItem('emailForSignIn', email);
+      
+      console.log('[AuthManager] Sign-in link sent successfully');
+    } catch (error: any) {
+      console.error('[AuthManager] Failed to send sign-in link:', error);
+      throw this.formatError(error);
+    }
+  }
+
+  /**
+   * Complete sign-in with email link
+   * If user is anonymous, automatically link the account
+   */
+  async signInWithEmailLink(email: string, link: string): Promise<void> {
+    try {
+      if (this.currentUser?.isAnonymous) {
+        // Link anonymous account
+        console.log('[AuthManager] Linking anonymous account to email via link');
+        const result = await FirebaseAuth.linkAnonymousToEmailLink({ email, link });
+        console.log('[AuthManager] Account linked via email link:', result.userId);
+        
+        await this.loadUserInfo();
+        
+        if (this.currentUser && !this.currentUser.isAnonymous) {
+          await firebaseSyncManager.performInitialSync();
+          console.log('[AuthManager] Firebase sync completed after linking');
+        }
+      } else {
+        // Normal sign in
+        console.log('[AuthManager] Signing in with email link');
+        const result = await FirebaseAuth.signInWithEmailLink({ email, link });
+        console.log('[AuthManager] Signed in via email link:', result.userId);
+        
+        await this.loadUserInfo();
+        
+        if (this.currentUser) {
+          await playerDataManager.initialize(this.currentUser.uid);
+          await firebaseSyncManager.performInitialSync();
+          firebaseSyncManager.startPeriodicSync();
+        }
+      }
+      
+      // Clear stored email
+      localStorage.removeItem('emailForSignIn');
+    } catch (error: any) {
+      console.error('[AuthManager] Email link sign-in failed:', error);
+      throw this.formatError(error);
+    }
+  }
+
+  /**
    * Send password reset email
    */
   async resetPassword(email: string): Promise<void> {
@@ -264,7 +376,9 @@ class AuthManager {
       'auth/too-many-requests': 'Too many attempts. Please try again later',
       'auth/network-request-failed': 'Network error. Check your connection',
       'auth/invalid-credential': 'Invalid email or password',
-      'auth/credential-already-in-use': 'This email is already linked to another account',
+      'auth/credential-already-in-use': 'This account is already linked to another user',
+      'auth/provider-already-linked': 'This Apple account is already linked',
+      'Sign in cancelled': 'Sign in cancelled',
     };
 
     const message = ERROR_MESSAGES[errorCode] || error.message || 'Authentication failed';

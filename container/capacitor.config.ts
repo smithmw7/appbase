@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.puzzleapp.wordstrike', // Will be overridden by build pipeline
+  appId: 'com.hightopgames.word', // Will be overridden by build pipeline
   appName: 'Puzzle App Word Strike', // Will be overridden by build pipeline
   webDir: 'public',
   server: {

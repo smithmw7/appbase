@@ -9,6 +9,11 @@ CAP_PLUGIN(FirebaseAuthPlugin, "FirebaseAuth",
            CAP_PLUGIN_METHOD(signUpWithEmail, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(signInWithEmail, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(linkAnonymousToEmail, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(sendSignInLink, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(signInWithEmailLink, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(linkAnonymousToEmailLink, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(signInWithApple, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(linkAnonymousToApple, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(signOut, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getUserInfo, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(sendPasswordReset, CAPPluginReturnPromise);

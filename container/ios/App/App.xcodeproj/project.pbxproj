@@ -16,6 +16,9 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		E158C10A2EEFC59700F2DC6B /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */; };
+		E15EB6492EF26CA500EC0B99 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */; };
+		E15EB64A2EF26CA500EC0B99 /* RemoteConfigPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */; };
+		E15EB64B2EF26CA500EC0B99 /* RemoteConfigPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */; };
 		E1B28CED2EEFC8ED00B7AAF4 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */; };
 		E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */; };
 		E1B28CF82EEFE43700B7AAF4 /* LocalStoragePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */; };
@@ -24,6 +27,8 @@
 		E1B28CFD2EEFE43700B7AAF4 /* LocalStoragePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */; };
 		E1B28CFE2EEFE43700B7AAF4 /* AdMobPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */; };
 		E1B28CFF2EEFE43700B7AAF4 /* FirebaseManager.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */; };
+		E1B28D012F00A00000B7AAF4 /* FirebaseAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B28D002F00A00000B7AAF4 /* FirebaseAuthPlugin.swift */; };
+		E1B28D032F00A00000B7AAF4 /* FirebaseAuthPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E1B28D022F00A00000B7AAF4 /* FirebaseAuthPlugin.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +44,10 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
+		E15EB63F2EF2682000EC0B99 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
+		E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RemoteConfigPlugin.m; sourceTree = "<group>"; };
+		E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigPlugin.swift; sourceTree = "<group>"; };
 		E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AdMobPlugin.m; sourceTree = "<group>"; };
 		E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobPlugin.swift; sourceTree = "<group>"; };
@@ -47,6 +56,8 @@
 		E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPPlugin.swift; sourceTree = "<group>"; };
 		E1B28CF52EEFE43700B7AAF4 /* LocalStoragePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LocalStoragePlugin.m; sourceTree = "<group>"; };
 		E1B28CF62EEFE43700B7AAF4 /* LocalStoragePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStoragePlugin.swift; sourceTree = "<group>"; };
+		E1B28D002F00A00000B7AAF4 /* FirebaseAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthPlugin.swift; sourceTree = "<group>"; };
+		E1B28D022F00A00000B7AAF4 /* FirebaseAuthPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FirebaseAuthPlugin.m; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -91,8 +102,14 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */,
+				E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */,
+				E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */,
+				E15EB63F2EF2682000EC0B99 /* App.entitlements */,
 				E1B28CEE2EEFE43700B7AAF4 /* AdMobPlugin.m */,
 				E1B28CEF2EEFE43700B7AAF4 /* AdMobPlugin.swift */,
+				E1B28D022F00A00000B7AAF4 /* FirebaseAuthPlugin.m */,
+				E1B28D002F00A00000B7AAF4 /* FirebaseAuthPlugin.swift */,
 				E1B28CF02EEFE43700B7AAF4 /* FirebaseManager.m */,
 				E1B28CF32EEFE43700B7AAF4 /* IAPPlugin.m */,
 				E1B28CF42EEFE43700B7AAF4 /* IAPPlugin.swift */,
@@ -251,6 +268,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E15EB6492EF26CA500EC0B99 /* AppleSignInManager.swift in Sources */,
+				E15EB64A2EF26CA500EC0B99 /* RemoteConfigPlugin.m in Sources */,
+				E15EB64B2EF26CA500EC0B99 /* RemoteConfigPlugin.swift in Sources */,
+				E1B28D032F00A00000B7AAF4 /* FirebaseAuthPlugin.m in Sources */,
+				E1B28D012F00A00000B7AAF4 /* FirebaseAuthPlugin.swift in Sources */,
 				E158C10A2EEFC59700F2DC6B /* FirebaseManager.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				E1B28CF72EEFE43700B7AAF4 /* AdMobPlugin.m in Sources */,
@@ -314,6 +336,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -371,6 +394,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -399,17 +423,20 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Early Word ";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.puzzleapp.wordstrike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hightopgames.word;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -424,16 +451,19 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Early Word ";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.puzzleapp.wordstrike;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hightopgames.word;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

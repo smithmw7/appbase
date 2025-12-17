@@ -270,6 +270,112 @@ import FirebaseFirestore
         }
     }
 
+    // MARK: - Email Link Authentication
+
+    /// Send sign-in link to email
+    @objc public func sendSignInLink(email: String, completion: @escaping (Bool, String?) -> Void) {
+        let actionCodeSettings = ActionCodeSettings()
+        actionCodeSettings.url = URL(string: "https://com-hightopgames-firebase.firebaseapp.com/__/auth/action")
+        actionCodeSettings.handleCodeInApp = true
+        actionCodeSettings.setIOSBundleID("com.hightopgames.word")
+        
+        Auth.auth().sendSignInLink(toEmail: email, actionCodeSettings: actionCodeSettings) { error in
+            if let error = error {
+                completion(false, error.localizedDescription)
+            } else {
+                // Save email to UserDefaults for link verification
+                UserDefaults.standard.set(email, forKey: "emailForSignIn")
+                completion(true, nil)
+            }
+        }
+    }
+
+    /// Complete sign-in with email link
+    @objc public func signInWithEmailLink(email: String, link: String, completion: @escaping (String?, String?) -> Void) {
+        Auth.auth().signIn(withEmail: email, link: link) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Link anonymous account to email link credential
+    @objc public func linkAnonymousToEmailLink(email: String, link: String, completion: @escaping (String?, String?) -> Void) {
+        guard let currentUser = Auth.auth().currentUser, currentUser.isAnonymous else {
+            completion(nil, "No anonymous user to link")
+            return
+        }
+        
+        let credential = EmailAuthProvider.credential(withEmail: email, link: link)
+        
+        currentUser.link(with: credential) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "Failed to link account")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    // MARK: - Apple Sign In
+
+    /// Sign in with Apple
+    @objc public func signInWithApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
+        let credential = OAuthProvider.credential(
+            providerID: AuthProviderID.apple,
+            idToken: idToken,
+            rawNonce: nonce
+        )
+        
+        Auth.auth().signIn(with: credential) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned from Apple sign in")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Link anonymous account to Apple credential
+    @objc public func linkAnonymousToApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
+        guard let currentUser = Auth.auth().currentUser, currentUser.isAnonymous else {
+            completion(nil, "No anonymous user to link")
+            return
+        }
+        
+        let credential = OAuthProvider.credential(
+            providerID: AuthProviderID.apple,
+            idToken: idToken,
+            rawNonce: nonce
+        )
+        
+        currentUser.link(with: credential) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "Failed to link Apple account")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
     // MARK: - Firestore Player Data
 
     /// Convert data dictionary to Firestore-compatible format

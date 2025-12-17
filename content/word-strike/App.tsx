@@ -16,6 +16,7 @@ import puzzlesJSON from './puzzles.json';
 import { authManager, UserProfile } from './data/AuthManager';
 import { ProfileButton } from './components/ProfileButton';
 import { SignInModal } from './components/SignInModal';
+import { handleEmailLink } from './utils/emailLinkHandler';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('start_screen');
@@ -45,6 +46,18 @@ const App: React.FC = () => {
   // Audio settings state
   const [musicVolume, setMusicVolume] = useState(() => audioManager.getMusicVolume());
   const [sfxVolume, setSfxVolume] = useState(() => audioManager.getSfxVolume());
+  const lastSfxPreviewAtRef = useRef<number>(0);
+  const previewSfxAtCurrentVolume = useCallback(() => {
+    // Prevent duplicate triggers on some devices (touchend + mouseup)
+    const now = Date.now();
+    if (now - lastSfxPreviewAtRef.current < 250) return;
+    lastSfxPreviewAtRef.current = now;
+
+    // Small delay to ensure the gain node has updated first
+    setTimeout(() => {
+      audioManager.playSfx('UI_click');
+    }, 10);
+  }, []);
   
   // Track play time
   const playTimeRef = useRef<number>(0);
@@ -130,7 +143,19 @@ const App: React.FC = () => {
         }
         console.log('[App] Puzzle data initialized:', puzzleDataManager.getVersion().source);
 
-        // 2. Initialize auth (anonymous or existing)
+        // 2. Check if opened via email link
+        const currentUrl = window.location.href;
+        if (currentUrl.includes('/__/auth/action')) {
+          console.log('[App] Detected email link in URL');
+          const linkHandled = await handleEmailLink(currentUrl);
+          if (linkHandled) {
+            console.log('[App] Email link authentication completed');
+            // Clear URL without reload
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
+
+        // 3. Initialize auth (anonymous or existing)
         console.log('[App] Initializing authentication...');
         const user = await authManager.initialize();
         if (!user) {
@@ -140,10 +165,10 @@ const App: React.FC = () => {
 
         console.log('[App] Authenticated as:', user.isAnonymous ? 'Anonymous' : user.email);
 
-        // 3. Initialize player data with user ID
+        // 4. Initialize player data with user ID
         await playerDataManager.initialize(user.uid);
         
-        // 4. Perform initial sync if not anonymous
+        // 5. Perform initial sync if not anonymous
         if (!user.isAnonymous) {
           await firebaseSyncManager.performInitialSync();
           if (isMounted) {
@@ -155,10 +180,10 @@ const App: React.FC = () => {
         // Start activity session
         playerDataManager.startSession();
 
-        // 5. Game is ready - all critical data loaded
+        // 6. Game is ready - all critical data loaded
         console.log('[App] Game ready!');
 
-        // 6. Background: Check for puzzle updates (non-blocking)
+        // 7. Background: Check for puzzle updates (non-blocking)
         console.log('[App] Checking for puzzle updates in background...');
         remotePuzzleLoader.checkForUpdates(false).then(() => {
           console.log('[App] Puzzle update check complete');
@@ -895,17 +920,25 @@ const App: React.FC = () => {
                 audioManager.setSfxVolume(vol);
                 // Save to player data
                 playerDataManager.updateSettings({ sfxVolume: vol }).catch(console.error);
-                // Play a test sound at the new volume so user can hear the change
-                // Use a small delay to ensure volume is set first
-                setTimeout(() => {
-                  audioManager.playSfx('UI_click');
-                }, 10);
               }}
               onMouseUp={() => {
-                // Don't play again on mouseup since we already played on change
+                previewSfxAtCurrentVolume();
               }}
               onTouchEnd={() => {
-                // Don't play again on touchend since we already played on change
+                previewSfxAtCurrentVolume();
+              }}
+              onKeyUp={(e) => {
+                // For keyboard adjustments on focused range inputs
+                if (
+                  e.key === 'ArrowLeft' ||
+                  e.key === 'ArrowRight' ||
+                  e.key === 'ArrowUp' ||
+                  e.key === 'ArrowDown' ||
+                  e.key === 'Home' ||
+                  e.key === 'End'
+                ) {
+                  previewSfxAtCurrentVolume();
+                }
               }}
               className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
               style={{
@@ -1363,35 +1396,43 @@ const App: React.FC = () => {
         {/* Start Screen Settings Overlay */}
         {isMenuOpen && (
            <div className="fixed inset-0 bg-black/50 z-50 flex justify-start">
-             <div className="w-80 bg-white h-full p-6 shadow-2xl overflow-y-auto">
-               <div className="flex justify-between items-center mb-6">
-                 <h2 
-                   className="text-xl font-bold cursor-pointer hover:text-amber-600 transition-colors"
-                   onClick={() => {
-                     triggerHaptic('light');
-                     audioManager.playSfx('UI_click');
-                     setShowDebug(!showDebug);
-                   }}
-                   title="Tap to toggle debug tools"
-                 >
-                   Settings
-                 </h2>
-                <button 
-                  onClick={() => {
-                    triggerHaptic('light');
-                    audioManager.playSfx('UI_click');
-                    setIsMenuOpen(false);
-                    setShowDebug(false);
-                  }}
-                  className="p-2 text-slate-500 hover:text-slate-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+             <div className="w-80 bg-white h-full shadow-2xl overflow-y-auto">
+               <div
+                 className="sticky top-0 z-10 bg-slate-900 text-white"
+                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+               >
+                 <div className="px-6 pb-4 flex justify-between items-center">
+                   <h2
+                     className="text-xl font-bold cursor-pointer hover:text-white/90 transition-colors"
+                     onClick={() => {
+                       triggerHaptic('light');
+                       audioManager.playSfx('UI_click');
+                       setShowDebug(!showDebug);
+                     }}
+                     title="Tap to toggle debug tools"
+                   >
+                     Settings
+                   </h2>
+                   <button
+                     onClick={() => {
+                       triggerHaptic('light');
+                       audioManager.playSfx('UI_click');
+                       setIsMenuOpen(false);
+                       setShowDebug(false);
+                     }}
+                     className="p-2 text-white/80 hover:text-white"
+                     aria-label="Close settings"
+                   >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                     </svg>
+                   </button>
+                 </div>
                </div>
 
-               {renderSettingsPanel()}
+               <div className="p-6 pt-4">
+                 {renderSettingsPanel()}
+               </div>
              </div>
              <div className="flex-1" onClick={() => {
                setIsMenuOpen(false);
@@ -1418,35 +1459,43 @@ const App: React.FC = () => {
               setShowDebug(false);
             }}
           />
-          <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-2xl p-6 overflow-y-auto transform transition-transform duration-300 ease-out">
-            <div className="flex justify-between items-center mb-6">
-              <h2 
-                className="text-xl font-bold text-slate-800 cursor-pointer hover:text-amber-600 transition-colors"
-                onClick={() => {
-                  triggerHaptic('light');
-                  audioManager.playSfx('UI_click');
-                  setShowDebug(!showDebug);
-                }}
-                title="Tap to toggle debug tools"
-              >
-                Settings
-              </h2>
-              <button 
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setShowDebug(false);
-                  triggerHaptic('light');
-                  audioManager.playSfx('UI_click');
-                }} 
-                className="p-2 text-slate-500 hover:text-slate-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-out">
+            <div
+              className="sticky top-0 z-10 bg-slate-900 text-white"
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+            >
+              <div className="px-6 pb-4 flex justify-between items-center">
+                <h2
+                  className="text-xl font-bold cursor-pointer hover:text-white/90 transition-colors"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    audioManager.playSfx('UI_click');
+                    setShowDebug(!showDebug);
+                  }}
+                  title="Tap to toggle debug tools"
+                >
+                  Settings
+                </h2>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowDebug(false);
+                    triggerHaptic('light');
+                    audioManager.playSfx('UI_click');
+                  }}
+                  className="p-2 text-white/80 hover:text-white"
+                  aria-label="Close settings"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {renderSettingsPanel()}
+            <div className="p-6 pt-4">
+              {renderSettingsPanel()}
+            </div>
           </div>
         </>
       )}

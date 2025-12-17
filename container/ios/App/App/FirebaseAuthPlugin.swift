@@ -184,4 +184,107 @@ public class FirebaseAuthPlugin: CAPPlugin {
             }
         }
     }
+
+    // MARK: - Email Link Authentication
+
+    @objc func sendSignInLink(_ call: CAPPluginCall) {
+        guard let email = call.getString("email") else {
+            call.reject("email is required")
+            return
+        }
+        
+        FirebaseManager.shared.sendSignInLink(email: email) { success, error in
+            if let error = error {
+                call.reject(error)
+            } else {
+                call.resolve(["success": success])
+            }
+        }
+    }
+
+    @objc func signInWithEmailLink(_ call: CAPPluginCall) {
+        guard let email = call.getString("email"),
+              let link = call.getString("link") else {
+            call.reject("email and link are required")
+            return
+        }
+        
+        FirebaseManager.shared.signInWithEmailLink(email: email, link: link) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId])
+            } else {
+                call.reject("Failed to sign in with email link")
+            }
+        }
+    }
+
+    @objc func linkAnonymousToEmailLink(_ call: CAPPluginCall) {
+        guard let email = call.getString("email"),
+              let link = call.getString("link") else {
+            call.reject("email and link are required")
+            return
+        }
+        
+        FirebaseManager.shared.linkAnonymousToEmailLink(email: email, link: link) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId, "linked": true])
+            } else {
+                call.reject("Failed to link account")
+            }
+        }
+    }
+
+    // MARK: - Apple Sign In
+
+    @objc func signInWithApple(_ call: CAPPluginCall) {
+        AppleSignInManager.shared.signIn { idToken, nonce, error in
+            if let error = error {
+                call.reject(error)
+                return
+            }
+            
+            guard let idToken = idToken, let nonce = nonce else {
+                call.reject("Failed to get Apple credentials")
+                return
+            }
+            
+            FirebaseManager.shared.signInWithApple(idToken: idToken, nonce: nonce) { userId, error in
+                if let error = error {
+                    call.reject(error)
+                } else if let userId = userId {
+                    call.resolve(["userId": userId])
+                } else {
+                    call.reject("Failed to sign in with Apple")
+                }
+            }
+        }
+    }
+
+    @objc func linkAnonymousToApple(_ call: CAPPluginCall) {
+        AppleSignInManager.shared.signIn { idToken, nonce, error in
+            if let error = error {
+                call.reject(error)
+                return
+            }
+            
+            guard let idToken = idToken, let nonce = nonce else {
+                call.reject("Failed to get Apple credentials")
+                return
+            }
+            
+            FirebaseManager.shared.linkAnonymousToApple(idToken: idToken, nonce: nonce) { userId, error in
+                if let error = error {
+                    call.reject(error)
+                } else if let userId = userId {
+                    call.resolve(["userId": userId, "linked": true])
+                } else {
+                    call.reject("Failed to link Apple account")
+                }
+            }
+        }
+    }
 }
