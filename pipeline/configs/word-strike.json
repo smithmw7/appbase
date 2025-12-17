@@ -1,6 +1,6 @@
 {
   "bundleId": "com.hightopgames.word",
-  "appName": "Puzzle App Word Strike",
+  "appName": "Daily Reword",
   "iconPath": "pipeline/assets/icons/main",
   "contentDir": "content/word-strike",
   "firebaseConfig": "container/ios/App/App/GoogleService-Info.plist",

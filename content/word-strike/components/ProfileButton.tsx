@@ -15,7 +15,7 @@ export const ProfileButton: React.FC<ProfileButtonProps> = ({ isAnonymous, userE
   return (
     <button
       onClick={onClick}
-      className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+      className="w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
       style={{
         backgroundColor: isAnonymous ? '#94a3b8' : '#8b5cf6',
         color: 'white',
@@ -29,7 +29,7 @@ export const ProfileButton: React.FC<ProfileButtonProps> = ({ isAnonymous, userE
           viewBox="0 0 24 24" 
           strokeWidth={2} 
           stroke="currentColor" 
-          className="w-6 h-6"
+          className="w-7 h-7"
         >
           <path 
             strokeLinecap="round" 
@@ -38,7 +38,7 @@ export const ProfileButton: React.FC<ProfileButtonProps> = ({ isAnonymous, userE
           />
         </svg>
       ) : (
-        <span className="text-lg font-bold">
+        <span className="text-xl font-bold">
           {getInitial(userEmail)}
         </span>
       )}

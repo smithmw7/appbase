@@ -28,8 +28,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@capacitor/app": "^6.0.3",
-    "@capacitor/core": "^6.2.1",
-    "@capacitor/haptics": "^6.0.3"
+    "@capacitor/app": "^7.1.1",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/haptics": "^7.0.3"
   }
 }

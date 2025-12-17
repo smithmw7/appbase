@@ -206,13 +206,15 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
         style={{
           marginTop: 'calc(env(safe-area-inset-top) + 16px)',
-          maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
+          height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
+          position: 'fixed',
+          bottom: 0,
         }}
       >
         {/* Header */}
         <div
-          className="sticky top-0 z-10 bg-white border-b border-slate-200"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
+          className="bg-white border-b border-slate-200"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 74px)' }}
         >
           <div className="px-6 pb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800">
@@ -233,7 +235,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 pb-8 overflow-y-auto">
+        <div className="p-6 pb-8 overflow-hidden">
           {/* Profile View (Authenticated) */}
           {step === 'profile' && !isAnonymous && (
             <div>
@@ -268,12 +270,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           {/* Step 1: Email Entry + Provider Buttons */}
           {step === 'email' && (
             <div>
-              {/* Apple Sign In Button */}
-              <button
-                onClick={handleAppleSignIn}
-                disabled={appleLoading || loading}
-                className="w-full py-3 px-4 bg-black text-white font-medium rounded-xl hover:bg-gray-900 disabled:bg-slate-300 transition-colors flex items-center justify-center space-x-2 mb-3"
-              >
+              {/* Apple Sign In Button - Show for all users on email step */}
+              {isAnonymous && (
+                <button
+                  onClick={handleAppleSignIn}
+                  disabled={appleLoading || loading}
+                  className="w-full py-3 px-4 bg-black text-white font-medium rounded-xl hover:bg-gray-900 disabled:bg-slate-300 transition-colors flex items-center justify-center space-x-2 mb-3"
+                >
                 {appleLoading ? (
                   <span>Signing in...</span>
                 ) : (
@@ -285,8 +288,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   </>
                 )}
               </button>
+              )}
 
-              {/* Google Placeholder Button */}
+              {/* Google Placeholder Button - Show for all users on email step */}
+              {isAnonymous && (
               <button
                 onClick={handleGoogleSignIn}
                 disabled={loading || appleLoading}
@@ -300,6 +305,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </svg>
                 <span>Continue with Google</span>
               </button>
+              )}
 
               {/* Divider */}
               <div className="relative my-6">

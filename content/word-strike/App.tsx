@@ -17,8 +17,11 @@ import { authManager, UserProfile } from './data/AuthManager';
 import { ProfileButton } from './components/ProfileButton';
 import { SignInModal } from './components/SignInModal';
 import { handleEmailLink } from './utils/emailLinkHandler';
+import { ProSubscriptionPanel } from './components/ProSubscriptionPanel';
+import { useRevenueCat } from './revenuecat/RevenueCatProvider';
 
 const App: React.FC = () => {
+  const { setAppUserId } = useRevenueCat();
   const [status, setStatus] = useState<GameStatus>('start_screen');
   const [currentLevel, setCurrentLevel] = useState<LevelData | null>(null);
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState<number>(0);
@@ -125,9 +128,12 @@ const App: React.FC = () => {
       if (user) {
         setAuthUserId(user.uid);
       }
+      // Sync app user to RevenueCat for purchase/entitlement portability across devices.
+      // Keep RevenueCat anonymous users for anonymous sessions.
+      void setAppUserId(user && !user.isAnonymous ? user.uid : null);
     });
     return unsubscribe;
-  }, []);
+  }, [setAppUserId]);
 
   // Initialize puzzle data, player data, and Firebase sync on app mount
   useEffect(() => {
@@ -976,6 +982,9 @@ const App: React.FC = () => {
         )}
       </div>
 
+      {/* Hightop Games Pro (RevenueCat) */}
+      <ProSubscriptionPanel title="Hightop Games Pro" />
+
       {/* Links Section */}
       <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
         <h3 className="font-bold text-slate-700 mb-3">Legal & Support</h3>
@@ -1023,7 +1032,7 @@ const App: React.FC = () => {
       <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
         <h3 className="font-bold text-slate-700 mb-2">About</h3>
         <p className="text-xs text-slate-500 mb-3">
-          Word Patch is a word puzzle game where you transform words by swapping letters. 
+          Daily Reword is a word puzzle game where you transform words by swapping letters. 
           Clear the rack to complete each puzzle!
         </p>
         {appInfo && (
@@ -1368,7 +1377,7 @@ const App: React.FC = () => {
   if (status === 'start_screen') {
     return (
       <div className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-center p-4">
-        <h1 className="text-5xl font-bold text-slate-800 mb-8 tracking-tight">Word Patch</h1>
+        <h1 className="text-5xl font-bold text-slate-800 mb-8 tracking-tight">Daily Reword</h1>
         <div className="w-full max-w-xs space-y-4">
             <button
             onClick={() => {
@@ -1399,7 +1408,7 @@ const App: React.FC = () => {
              <div className="w-80 bg-white h-full shadow-2xl overflow-y-auto">
                <div
                  className="sticky top-0 z-10 bg-slate-900 text-white"
-                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
+                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 74px)' }}
                >
                  <div className="px-6 pb-4 flex justify-between items-center">
                    <h2
@@ -1462,7 +1471,7 @@ const App: React.FC = () => {
           <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-out">
             <div
               className="sticky top-0 z-10 bg-slate-900 text-white"
-              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 74px)' }}
             >
               <div className="px-6 pb-4 flex justify-between items-center">
                 <h2
@@ -1501,7 +1510,7 @@ const App: React.FC = () => {
       )}
 
       {/* Header / HUD */}
-      <div className="w-full max-w-md flex justify-between items-center mb-4 relative z-10">
+      <div className="w-full max-w-md flex justify-between items-center mb-4 relative z-10" style={{ marginTop: '40px' }}>
         <button 
           onClick={() => {
             triggerHaptic('light');
@@ -1518,24 +1527,19 @@ const App: React.FC = () => {
         </button>
 
         <div className="flex flex-col items-center absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Word Patch</h1>
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Daily Reword</h1>
             {isEndlessMode && <div className="text-xs font-bold text-purple-600 uppercase tracking-widest">Streak: {streak}</div>}
         </div>
         
-        <div className="flex items-center gap-2">
-          <ProfileButton
-            isAnonymous={authUser?.isAnonymous ?? true}
-            userEmail={authUser?.email ?? null}
-            onClick={() => {
-              triggerHaptic('light');
-              audioManager.playSfx('UI_click');
-              setShowSignInModal(true);
-            }}
-          />
-          <div className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-            {rackTiles.length} tiles left
-          </div>
-        </div>
+        <ProfileButton
+          isAnonymous={authUser?.isAnonymous ?? true}
+          userEmail={authUser?.email ?? null}
+          onClick={() => {
+            triggerHaptic('light');
+            audioManager.playSfx('UI_click');
+            setShowSignInModal(true);
+          }}
+        />
       </div>
 
       {/* Main Game Area */}

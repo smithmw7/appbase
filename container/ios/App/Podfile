@@ -1,6 +1,7 @@
 require_relative '../../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
-platform :ios, '13.0'
+# RevenueCat Paywalls / Customer Center require iOS 15+.
+platform :ios, '15.0'
 use_frameworks!
 
 # workaround to avoid Xcode caching of Pods that requires
@@ -11,11 +12,13 @@ install! 'cocoapods', :disable_input_output_paths => true
 def capacitor_pods
   pod 'Capacitor', :path => '../../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../../node_modules/@capacitor/ios'
+  pod 'CapacitorCommunitySqlite', :path => '../../../node_modules/@capacitor-community/sqlite'
   pod 'CapacitorApp', :path => '../../../node_modules/@capacitor/app'
   pod 'CapacitorDevice', :path => '../../../node_modules/@capacitor/device'
   pod 'CapacitorHaptics', :path => '../../../node_modules/@capacitor/haptics'
   pod 'CapacitorPreferences', :path => '../../../node_modules/@capacitor/preferences'
-  pod 'CapacitorCommunitySqlite', :path => '../../../node_modules/@capacitor-community/sqlite'
+  pod 'RevenuecatPurchasesCapacitor', :path => '../../node_modules/@revenuecat/purchases-capacitor'
+  pod 'RevenuecatPurchasesCapacitorUi', :path => '../../../node_modules/@revenuecat/purchases-capacitor-ui'
 end
 
 target 'App' do
