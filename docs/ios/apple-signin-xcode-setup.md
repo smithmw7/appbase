@@ -189,4 +189,4 @@ Once build succeeds and app runs on device:
 
 **Tap the gray profile button → Tap "Sign in with Apple" → Follow iOS prompts**
 
-See `APPLE_SIGNIN_TESTING.md` for complete testing scenarios.
+See [apple-signin-testing.md](apple-signin-testing.md) for complete testing scenarios.

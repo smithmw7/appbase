@@ -213,7 +213,7 @@ The entitlements file needs to be added manually:
 6. Set to: `App/App.entitlements`
 7. Go to Signing & Capabilities → Add "Sign in with Apple"
 
-**See:** `APPLE_SIGNIN_XCODE_SETUP.md` for detailed steps
+**See:** [../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md) for detailed steps
 
 ### 2. Enable Email Link in Firebase Console (2 minutes)
 
@@ -296,11 +296,11 @@ Connect your iPhone and test:
 
 ## Documentation
 
-- **IMPLEMENTATION_COMPLETE.md** - This file
-- **NYT_AUTH_IMPLEMENTATION_COMPLETE.md** - Technical details
-- **NYT_AUTH_QUICK_REFERENCE.md** - Quick guide
-- **APPLE_SIGNIN_XCODE_SETUP.md** - Xcode setup steps
-- **APPLE_SIGNIN_TESTING.md** - Testing guide
+- **implementation-complete.md** - This file
+- **[nyt-auth-implementation.md](nyt-auth-implementation.md)** - Technical details
+- **[nyt-auth-quick-reference.md](nyt-auth-quick-reference.md)** - Quick guide
+- **[../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md)** - Xcode setup steps
+- **[../ios/apple-signin-testing.md](../ios/apple-signin-testing.md)** - Testing guide
 
 ## Success! 🎉
 

@@ -164,7 +164,7 @@ That's it! No other configuration needed.
 
 ### Prerequisites
 
-- [ ] Xcode setup completed (see APPLE_SIGNIN_XCODE_SETUP.md)
+- [ ] Xcode setup completed (see [../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md))
 - [ ] Physical device connected
 - [ ] Email link enabled in Firebase Console
 - [ ] Build #31 installed on device
@@ -235,9 +235,9 @@ That's it! No other configuration needed.
 ## Documentation Files
 
 - **This File:** Quick reference
-- **NYT_AUTH_IMPLEMENTATION_COMPLETE.md:** Full details
-- **APPLE_SIGNIN_XCODE_SETUP.md:** Xcode configuration steps
-- **APPLE_SIGNIN_TESTING.md:** Apple-specific testing
+- **[nyt-auth-implementation.md](nyt-auth-implementation.md):** Full details
+- **[../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md):** Xcode configuration steps
+- **[../ios/apple-signin-testing.md](../ios/apple-signin-testing.md):** Apple-specific testing
 
 ## Ready to Test!
 

@@ -348,8 +348,8 @@ Once testing confirms everything works:
 ## Documentation
 
 - Plan: `.cursor/plans/sign_in_with_apple_31bdbd9d.plan.md`
-- Email/Password auth: `AUTH_TESTING_GUIDE.md`
-- Implementation summary: `AUTH_IMPLEMENTATION_SUMMARY.md`
+- Email/Password auth: [../auth/auth-testing-guide.md](../auth/auth-testing-guide.md)
+- Implementation summary: [../auth/auth-implementation-summary.md](../auth/auth-implementation-summary.md)
 
 ## Support
 

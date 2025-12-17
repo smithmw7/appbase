@@ -77,9 +77,9 @@ open App.xcworkspace
 
 ## 📚 Detailed Guides
 
-- **Xcode Setup:** `APPLE_SIGNIN_XCODE_SETUP.md` (step-by-step screenshots)
-- **Testing:** `APPLE_SIGNIN_TESTING.md` (all test scenarios)
-- **Implementation:** `APPLE_SIGNIN_IMPLEMENTATION_COMPLETE.md` (technical details)
+- **Xcode Setup:** [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md) (step-by-step screenshots)
+- **Testing:** [apple-signin-testing.md](apple-signin-testing.md) (all test scenarios)
+- **Implementation:** [apple-signin-implementation.md](apple-signin-implementation.md) (technical details)
 
 ## 🐛 Troubleshooting
 

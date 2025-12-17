@@ -87,7 +87,7 @@ Before the app will work, you **MUST** complete these manual steps in Xcode:
 3. **Add "Sign in with Apple" capability**
 4. **Update code signing**
 
-**See:** `APPLE_SIGNIN_XCODE_SETUP.md` for detailed step-by-step instructions.
+**See:** [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md) for detailed step-by-step instructions.
 
 ### Apple Developer Portal
 
@@ -104,7 +104,7 @@ Before the app will work, you **MUST** complete these manual steps in Xcode:
 
 ### Prerequisites
 
-- [ ] Complete Xcode setup steps (see `APPLE_SIGNIN_XCODE_SETUP.md`)
+- [ ] Complete Xcode setup steps (see [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md))
 - [ ] Physical iOS device connected (simulator won't work!)
 - [ ] Device running iOS 13 or later
 - [ ] Valid provisioning profile with Sign in with Apple
@@ -137,7 +137,7 @@ Before the app will work, you **MUST** complete these manual steps in Xcode:
 5. Data restored from Firebase ✅
 ```
 
-**See:** `APPLE_SIGNIN_TESTING.md` for complete testing guide with expected results.
+**See:** [apple-signin-testing.md](apple-signin-testing.md) for complete testing guide with expected results.
 
 ## Files Created/Modified Summary
 
@@ -146,9 +146,9 @@ Before the app will work, you **MUST** complete these manual steps in Xcode:
 ```
 container/ios/App/App/AppleSignInManager.swift         121 lines
 container/ios/App/App/App.entitlements                  13 lines
-APPLE_SIGNIN_TESTING.md                                450 lines
-APPLE_SIGNIN_XCODE_SETUP.md                            250 lines
-APPLE_SIGNIN_IMPLEMENTATION_COMPLETE.md                (this file)
+apple-signin-testing.md                                450 lines
+apple-signin-xcode-setup.md                            250 lines
+apple-signin-implementation.md                         (this file)
 ```
 
 ### 📝 Modified Files (8)
@@ -271,14 +271,14 @@ Same code works for all environments!
 ### Immediate (Required for Build)
 
 1. **Open Xcode** (already open from build script)
-2. **Follow Xcode setup guide:** `APPLE_SIGNIN_XCODE_SETUP.md`
+2. **Follow Xcode setup guide:** [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md)
 3. **Connect physical device**
 4. **Build and run** (⌘R)
 5. **Test Apple Sign In flow**
 
 ### Testing Phase
 
-1. **Test on physical device** using `APPLE_SIGNIN_TESTING.md`
+1. **Test on physical device** using [apple-signin-testing.md](apple-signin-testing.md)
 2. **Verify all scenarios work:**
    - Anonymous → Apple linking
    - Sign out / sign in
@@ -306,7 +306,7 @@ Same code works for all environments!
 ### Common Issues
 
 **Build Error: "Missing entitlements file"**
-- Solution: Complete Step 1 in `APPLE_SIGNIN_XCODE_SETUP.md`
+- Solution: Complete Step 1 in [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md)
 
 **Runtime Error: "Failed to get Apple credentials"**
 - Solution: Must use physical device, not simulator
@@ -326,10 +326,10 @@ Same code works for all environments!
 
 ## Documentation Files
 
-- **Setup Guide:** `APPLE_SIGNIN_XCODE_SETUP.md` - Required Xcode configuration
-- **Testing Guide:** `APPLE_SIGNIN_TESTING.md` - Complete test scenarios
+- **Setup Guide:** [apple-signin-xcode-setup.md](apple-signin-xcode-setup.md) - Required Xcode configuration
+- **Testing Guide:** [apple-signin-testing.md](apple-signin-testing.md) - Complete test scenarios
 - **Implementation Plan:** `.cursor/plans/sign_in_with_apple_31bdbd9d.plan.md`
-- **Email/Password Auth:** `AUTH_TESTING_GUIDE.md` - Original auth system
+- **Email/Password Auth:** [../auth/auth-testing-guide.md](../auth/auth-testing-guide.md) - Original auth system
 - **Summary:** This file
 
 ## Success! 🎉

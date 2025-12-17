@@ -274,7 +274,7 @@ The authentication system is fully functional. You can now:
 4. **Verify linking** - Check that progress is preserved
 5. **Test sign in/out** - Full authentication cycle
 
-See `AUTH_TESTING_GUIDE.md` for detailed test scenarios.
+See [auth-testing-guide.md](auth-testing-guide.md) for detailed test scenarios.
 
 ## 📝 What's NOT Included (Future Work)
 

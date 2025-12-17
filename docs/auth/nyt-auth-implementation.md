@@ -417,7 +417,7 @@ You must still complete manual Xcode steps:
 3. Add "Sign in with Apple" capability
 4. Update code signing
 
-See: `APPLE_SIGNIN_XCODE_SETUP.md` for detailed steps
+See: [../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md) for detailed steps
 
 ### Email Link Limitations
 
@@ -574,7 +574,7 @@ NYT-style auth is working when:
 
 ## Next Steps
 
-1. **Complete Xcode setup** (see APPLE_SIGNIN_XCODE_SETUP.md)
+1. **Complete Xcode setup** (see [../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md))
 2. **Enable email link auth in Firebase Console**
 3. **Test on physical device:**
    - Email detection flow
@@ -585,9 +585,9 @@ NYT-style auth is working when:
 
 ## Documentation
 
-- **Xcode Setup:** `APPLE_SIGNIN_XCODE_SETUP.md`
-- **Apple Testing:** `APPLE_SIGNIN_TESTING.md`
-- **Quick Start:** `QUICK_START_APPLE_SIGNIN.md`
+- **Xcode Setup:** [../ios/apple-signin-xcode-setup.md](../ios/apple-signin-xcode-setup.md)
+- **Apple Testing:** [../ios/apple-signin-testing.md](../ios/apple-signin-testing.md)
+- **Quick Start:** [../ios/apple-signin-quickstart.md](../ios/apple-signin-quickstart.md)
 - **This File:** Implementation summary
 
 ## Ready to Test!

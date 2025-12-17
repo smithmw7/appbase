@@ -25,6 +25,29 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const [appleLoading, setAppleLoading] = useState(false);
   const [emailLinkSent, setEmailLinkSent] = useState(false);
 
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    
+    // Lock body scroll and prevent iOS viewport shift
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    const originalPosition = window.getComputedStyle(document.body).position;
+    const scrollY = window.scrollY;
+    
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    
+    return () => {
+      document.body.style.overflow = originalStyle;
+      document.body.style.position = originalPosition;
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -194,29 +217,54 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }}
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={handleClose}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
       />
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden"
+        className="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl animate-slide-up"
         style={{
-          marginTop: 'calc(env(safe-area-inset-top) + 16px)',
-          height: 'calc(100dvh - env(safe-area-inset-top) - 16px)',
           position: 'fixed',
           bottom: 0,
+          left: 0,
+          right: 0,
+          maxWidth: '512px',
+          margin: '0 auto',
+          paddingTop: 'calc(env(safe-area-inset-top) + 90px)',
+          height: 'calc(100vh - env(safe-area-inset-top) - 16px)',
+          maxHeight: 'calc(100vh - env(safe-area-inset-top) - 16px)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          touchAction: 'none',
         }}
+        onTouchMove={(e) => e.preventDefault()}
       >
         {/* Header */}
         <div
-          className="bg-white border-b border-slate-200"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 74px)' }}
+          className="bg-white border-b border-slate-200 flex-shrink-0"
         >
-          <div className="px-6 pb-4 flex items-center justify-between">
+          <div className="px-6 py-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800">
               {step === 'email' && 'Log in or create an account'}
               {step === 'create' && 'Create your free account'}
@@ -235,7 +283,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 pb-8 overflow-hidden">
+        <div 
+          className="p-6 pb-8 flex-1"
+          style={{
+            overflow: 'hidden',
+            overscrollBehavior: 'contain',
+          }}
+        >
           {/* Profile View (Authenticated) */}
           {step === 'profile' && !isAnonymous && (
             <div>
