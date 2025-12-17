@@ -80,4 +80,108 @@ public class FirebaseAuthPlugin: CAPPlugin {
             }
         }
     }
+
+    // MARK: - Email/Password Authentication
+
+    @objc func signUpWithEmail(_ call: CAPPluginCall) {
+        guard let email = call.getString("email"),
+              let password = call.getString("password") else {
+            call.reject("email and password are required")
+            return
+        }
+        
+        FirebaseManager.shared.signUpWithEmail(email: email, password: password) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId])
+            } else {
+                call.reject("Failed to sign up")
+            }
+        }
+    }
+
+    @objc func signInWithEmail(_ call: CAPPluginCall) {
+        guard let email = call.getString("email"),
+              let password = call.getString("password") else {
+            call.reject("email and password are required")
+            return
+        }
+        
+        FirebaseManager.shared.signInWithEmail(email: email, password: password) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId])
+            } else {
+                call.reject("Failed to sign in")
+            }
+        }
+    }
+
+    @objc func linkAnonymousToEmail(_ call: CAPPluginCall) {
+        guard let email = call.getString("email"),
+              let password = call.getString("password") else {
+            call.reject("email and password are required")
+            return
+        }
+        
+        FirebaseManager.shared.linkAnonymousToEmail(email: email, password: password) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId, "linked": true])
+            } else {
+                call.reject("Failed to link account")
+            }
+        }
+    }
+
+    @objc func signOut(_ call: CAPPluginCall) {
+        FirebaseManager.shared.signOut { success, error in
+            if let error = error {
+                call.reject(error)
+            } else {
+                call.resolve(["success": success])
+            }
+        }
+    }
+
+    @objc func getUserInfo(_ call: CAPPluginCall) {
+        if let userInfo = FirebaseManager.shared.getUserInfo() {
+            call.resolve(["userInfo": userInfo])
+        } else {
+            call.resolve(["userInfo": NSNull()])
+        }
+    }
+
+    @objc func sendPasswordReset(_ call: CAPPluginCall) {
+        guard let email = call.getString("email") else {
+            call.reject("email is required")
+            return
+        }
+        
+        FirebaseManager.shared.sendPasswordReset(email: email) { success, error in
+            if let error = error {
+                call.reject(error)
+            } else {
+                call.resolve(["success": success])
+            }
+        }
+    }
+
+    @objc func fetchSignInMethods(_ call: CAPPluginCall) {
+        guard let email = call.getString("email") else {
+            call.reject("email is required")
+            return
+        }
+        
+        FirebaseManager.shared.fetchSignInMethods(email: email) { methods, error in
+            if let error = error {
+                call.reject(error)
+            } else {
+                call.resolve(["methods": methods ?? []])
+            }
+        }
+    }
 }

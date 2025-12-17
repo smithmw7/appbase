@@ -41,14 +41,35 @@
       },
       "valueType": "BOOLEAN",
       "description": "Enable maintenance mode to temporarily disable app features"
+    },
+    "puzzle_data_url": {
+      "defaultValue": {
+        "value": "https://com-hightopgames-firebase.web.app/puzzles-v1.0.0.json"
+      },
+      "valueType": "STRING",
+      "description": "URL to hosted puzzle JSON file (Firebase Storage or Hosting)"
+    },
+    "puzzle_data_version": {
+      "defaultValue": {
+        "value": "b77e883208d2f48aa8377accf17fc826932d29905600b5ee32642d408d8d432c"
+      },
+      "valueType": "STRING",
+      "description": "Expected SHA-256 hash of puzzle data for validation"
+    },
+    "min_app_version": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "valueType": "STRING",
+      "description": "Minimum app version required for puzzle data"
     }
   },
   "version": {
-    "versionNumber": "1",
-    "updateTime": "2024-12-14T20:00:00Z",
+    "versionNumber": "2",
+    "updateTime": "2024-12-16T00:00:00Z",
     "updateUser": {
       "email": "firebase-adminsdk@com-hightopgames-firebase.iam.gserviceaccount.com"
     },
-    "description": "Initial Remote Config template with 6 required keys"
+    "description": "Added puzzle data remote config parameters"
   }
 }

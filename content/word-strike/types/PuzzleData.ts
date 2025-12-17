@@ -42,6 +42,11 @@ export interface RawPuzzleData {
 }
 
 export interface PuzzleDataFile {
+  version?: string; // Semantic version (e.g., "1.0.0")
+  createdAt?: string; // ISO timestamp
+  description?: string; // Human-readable description
+  puzzleCount?: number; // Total number of puzzles
+  rackSizes?: number[]; // Array of rack sizes included
   puzzles: RawPuzzleData[];
 }
 
@@ -71,6 +76,23 @@ export function validatePuzzleData(data: any): data is PuzzleDataFile {
   }
 
   if (data.puzzles.length === 0) {
+    return false;
+  }
+
+  // Validate metadata if present
+  if (data.version !== undefined && typeof data.version !== 'string') {
+    return false;
+  }
+  if (data.createdAt !== undefined && typeof data.createdAt !== 'string') {
+    return false;
+  }
+  if (data.description !== undefined && typeof data.description !== 'string') {
+    return false;
+  }
+  if (data.puzzleCount !== undefined && typeof data.puzzleCount !== 'number') {
+    return false;
+  }
+  if (data.rackSizes !== undefined && !Array.isArray(data.rackSizes)) {
     return false;
   }
 

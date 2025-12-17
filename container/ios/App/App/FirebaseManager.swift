@@ -168,6 +168,108 @@ import FirebaseFirestore
         return Auth.auth().currentUser?.uid
     }
 
+    // MARK: - Email/Password Authentication
+
+    /// Sign up with email and password
+    @objc public func signUpWithEmail(email: String, password: String, completion: @escaping (String?, String?) -> Void) {
+        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned from sign up")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Sign in with email and password
+    @objc public func signInWithEmail(email: String, password: String, completion: @escaping (String?, String?) -> Void) {
+        Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned from sign in")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Link anonymous account to email credential
+    @objc public func linkAnonymousToEmail(email: String, password: String, completion: @escaping (String?, String?) -> Void) {
+        guard let currentUser = Auth.auth().currentUser, currentUser.isAnonymous else {
+            completion(nil, "No anonymous user to link")
+            return
+        }
+        
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        
+        currentUser.link(with: credential) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "Failed to link account")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Sign out current user
+    @objc public func signOut(completion: @escaping (Bool, String?) -> Void) {
+        do {
+            try Auth.auth().signOut()
+            completion(true, nil)
+        } catch let error {
+            completion(false, error.localizedDescription)
+        }
+    }
+
+    /// Get user info (email, provider, etc.)
+    @objc public func getUserInfo() -> [String: Any]? {
+        guard let user = Auth.auth().currentUser else {
+            return nil
+        }
+        
+        return [
+            "uid": user.uid,
+            "email": user.email ?? "",
+            "isAnonymous": user.isAnonymous,
+            "emailVerified": user.isEmailVerified,
+            "displayName": user.displayName ?? "",
+            "photoURL": user.photoURL?.absoluteString ?? ""
+        ]
+    }
+
+    /// Send password reset email
+    @objc public func sendPasswordReset(email: String, completion: @escaping (Bool, String?) -> Void) {
+        Auth.auth().sendPasswordReset(withEmail: email) { error in
+            if let error = error {
+                completion(false, error.localizedDescription)
+            } else {
+                completion(true, nil)
+            }
+        }
+    }
+
+    /// Check if email is already registered
+    @objc public func fetchSignInMethods(email: String, completion: @escaping ([String]?, String?) -> Void) {
+        Auth.auth().fetchSignInMethods(forEmail: email) { methods, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+            } else {
+                completion(methods ?? [], nil)
+            }
+        }
+    }
+
     // MARK: - Firestore Player Data
 
     /// Convert data dictionary to Firestore-compatible format

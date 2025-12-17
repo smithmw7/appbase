@@ -12,6 +12,10 @@ import { firebaseSyncManager } from './data/FirebaseSyncManager';
 import { puzzleDataManager } from './data/PuzzleDataManager';
 import { remotePuzzleLoader } from './data/RemotePuzzleLoader';
 import { refreshPremadePuzzles } from './assets';
+import puzzlesJSON from './puzzles.json';
+import { authManager, UserProfile } from './data/AuthManager';
+import { ProfileButton } from './components/ProfileButton';
+import { SignInModal } from './components/SignInModal';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('start_screen');
@@ -65,6 +69,10 @@ const App: React.FC = () => {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   
+  // Authentication state
+  const [authUser, setAuthUser] = useState<UserProfile | null>(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
   
@@ -97,6 +105,17 @@ const App: React.FC = () => {
     fetchAppInfo();
   }, []);
 
+  // Listen to auth state changes
+  useEffect(() => {
+    const unsubscribe = authManager.onAuthStateChanged((user) => {
+      setAuthUser(user);
+      if (user) {
+        setAuthUserId(user.uid);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   // Initialize puzzle data, player data, and Firebase sync on app mount
   useEffect(() => {
     let isMounted = true;
@@ -111,41 +130,35 @@ const App: React.FC = () => {
         }
         console.log('[App] Puzzle data initialized:', puzzleDataManager.getVersion().source);
 
-        // 2. Initialize Firebase auth and get user ID
-        console.log('[App] Initializing Firebase auth...');
-        const userId = await firebaseSyncManager.initialize();
-        if (!userId) {
-          console.warn('Failed to initialize Firebase auth, using local-only mode');
-          // Generate local UUID as fallback
-          const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          await playerDataManager.initialize(localId);
-          if (isMounted) {
-            setAuthUserId(localId);
-          }
-        } else {
-          // Initialize player data with user ID
-          await playerDataManager.initialize(userId);
-          if (isMounted) {
-            setAuthUserId(userId);
-          }
+        // 2. Initialize auth (anonymous or existing)
+        console.log('[App] Initializing authentication...');
+        const user = await authManager.initialize();
+        if (!user) {
+          console.error('[App] Failed to initialize authentication');
+          return;
+        }
 
-          // Perform initial sync
+        console.log('[App] Authenticated as:', user.isAnonymous ? 'Anonymous' : user.email);
+
+        // 3. Initialize player data with user ID
+        await playerDataManager.initialize(user.uid);
+        
+        // 4. Perform initial sync if not anonymous
+        if (!user.isAnonymous) {
           await firebaseSyncManager.performInitialSync();
           if (isMounted) {
             setLastSyncTime(new Date().toLocaleTimeString());
           }
-
-          // Start periodic sync
           firebaseSyncManager.startPeriodicSync();
         }
 
         // Start activity session
         playerDataManager.startSession();
 
-        // 3. Game is ready - all critical data loaded
+        // 5. Game is ready - all critical data loaded
         console.log('[App] Game ready!');
 
-        // 4. Background: Check for puzzle updates (non-blocking)
+        // 6. Background: Check for puzzle updates (non-blocking)
         console.log('[App] Checking for puzzle updates in background...');
         remotePuzzleLoader.checkForUpdates(false).then(() => {
           console.log('[App] Puzzle update check complete');
@@ -1004,8 +1017,19 @@ const App: React.FC = () => {
               <h4 className="font-semibold text-purple-700 mb-2">Puzzle Data</h4>
               <div className="text-xs text-slate-600 space-y-1">
                 <div className="flex justify-between">
-                  <span className="font-medium">Version:</span>
-                  <span className="font-mono">{puzzleVersion.version.slice(0, 12)}...</span>
+                  <span className="font-medium">Pack Version:</span>
+                  <span className="font-mono">{(() => {
+                    try {
+                      const packData = (puzzlesJSON as any);
+                      return packData.version || 'N/A';
+                    } catch {
+                      return 'N/A';
+                    }
+                  })()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Hash:</span>
+                  <span className="font-mono">{puzzleVersion.version.slice(0, 8)}...</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Source:</span>
@@ -1449,8 +1473,19 @@ const App: React.FC = () => {
             {isEndlessMode && <div className="text-xs font-bold text-purple-600 uppercase tracking-widest">Streak: {streak}</div>}
         </div>
         
-        <div className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-          {rackTiles.length} tiles left
+        <div className="flex items-center gap-2">
+          <ProfileButton
+            isAnonymous={authUser?.isAnonymous ?? true}
+            userEmail={authUser?.email ?? null}
+            onClick={() => {
+              triggerHaptic('light');
+              audioManager.playSfx('UI_click');
+              setShowSignInModal(true);
+            }}
+          />
+          <div className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            {rackTiles.length} tiles left
+          </div>
         </div>
       </div>
 
@@ -1625,6 +1660,14 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Sign In Modal */}
+      <SignInModal
+        isOpen={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        isAnonymous={authUser?.isAnonymous ?? true}
+        userEmail={authUser?.email ?? null}
+      />
     </div>
   );
 };

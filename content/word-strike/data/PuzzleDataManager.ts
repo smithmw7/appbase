@@ -67,13 +67,19 @@ class PuzzleDataManager {
       throw new Error('Invalid bundled puzzle data');
     }
 
+    // Use metadata from file if available, otherwise calculate
     const version: PuzzleDataVersion = {
       version: this.calculateVersion(data),
-      timestamp: new Date().toISOString(),
+      timestamp: data.createdAt || new Date().toISOString(),
       source: 'local',
-      puzzleCount: data.puzzles.length,
-      rackSizes: extractRackSizes(data),
+      puzzleCount: data.puzzleCount || data.puzzles.length,
+      rackSizes: data.rackSizes || extractRackSizes(data),
     };
+
+    // Log metadata if present
+    if (data.version) {
+      console.log(`[PuzzleDataManager] Loaded puzzle pack v${data.version}: ${data.description || 'No description'}`);
+    }
 
     return { version, data };
   }
@@ -232,13 +238,18 @@ class PuzzleDataManager {
 
     const version: PuzzleDataVersion = {
       version: await this.calculateVersionAsync(newData),
-      timestamp: new Date().toISOString(),
+      timestamp: newData.createdAt || new Date().toISOString(),
       source,
-      puzzleCount: newData.puzzles.length,
-      rackSizes: extractRackSizes(newData),
+      puzzleCount: newData.puzzleCount || newData.puzzles.length,
+      rackSizes: newData.rackSizes || extractRackSizes(newData),
     };
 
     const versionedData: VersionedPuzzleData = { version, data: newData };
+
+    // Log metadata from remote
+    if (newData.version) {
+      console.log(`[PuzzleDataManager] Remote puzzle pack v${newData.version}: ${newData.description || 'No description'}`);
+    }
 
     // Check if this is actually a new version
     if (this.activePuzzles && version.version === this.activePuzzles.version.version) {
