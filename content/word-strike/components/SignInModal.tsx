@@ -212,7 +212,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         {/* Header */}
         <div
           className="sticky top-0 z-10 bg-white border-b border-slate-200"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
         >
           <div className="px-6 pb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800">

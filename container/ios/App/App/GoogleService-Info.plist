@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.puzzleapp.main</string>
+	<string>com.hightopgames.word</string>
 	<key>PROJECT_ID</key>
 	<string>com-hightopgames-firebase</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:74002814264:ios:9d080eec9bb5da1c76ddcd</string>
+	<string>1:74002814264:ios:8ec6befc5c0fe64176ddcd</string>
 </dict>
 </plist>

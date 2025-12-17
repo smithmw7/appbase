@@ -1399,7 +1399,7 @@ const App: React.FC = () => {
              <div className="w-80 bg-white h-full shadow-2xl overflow-y-auto">
                <div
                  className="sticky top-0 z-10 bg-slate-900 text-white"
-                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
                >
                  <div className="px-6 pb-4 flex justify-between items-center">
                    <h2
@@ -1462,7 +1462,7 @@ const App: React.FC = () => {
           <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-out">
             <div
               className="sticky top-0 z-10 bg-slate-900 text-white"
-              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
             >
               <div className="px-6 pb-4 flex justify-between items-center">
                 <h2
