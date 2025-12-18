@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { authManager } from '../data/AuthManager';
+import { performAppleSignIn } from '../utils/appleSignIn';
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
 
   // Official Capacitor approach:
   // - Disable viewport resizing when the keyboard appears (Keyboard.resize = 'none' in capacitor.config.ts)
-  // - Disable native WebView scrolling while this modal is open so iOS can't scroll the page to "reveal" inputs.
+  // - Disable native WebView scrolling while this modal is open so iOS can't scroll the page to \"reveal\" inputs.
   useEffect(() => {
     if (!isOpen) return;
     if (!Capacitor.isNativePlatform()) return;
@@ -91,16 +92,21 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const handleAppleSignIn = async () => {
     setError('');
     setAppleLoading(true);
-    
+
     try {
-      await authManager.signInWithApple();
-      console.log('[SignInModal] Apple sign in successful');
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Apple Sign In is only available on a device build.');
+      }
+
+      const res = await performAppleSignIn();
+      console.log('[SignInModal] Apple sign in response:', res);
+
+      // TODO: later, wire this into Firebase account linking.
       handleClose();
     } catch (error: any) {
       console.error('[SignInModal] Apple sign in error:', error);
-      
-      // Don't show error if user cancelled
-      if (error.message !== 'Sign in cancelled') {
+      if (error?.message !== 'The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1000.)' &&
+          error?.message !== 'Sign in cancelled') {
         setError(error.message || 'Apple sign in failed');
       }
     } finally {

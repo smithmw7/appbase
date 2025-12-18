@@ -327,55 +327,6 @@ import FirebaseFirestore
         }
     }
 
-    // MARK: - Apple Sign In
-
-    /// Sign in with Apple
-    @objc public func signInWithApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
-        let credential = OAuthProvider.credential(
-            providerID: AuthProviderID.apple,
-            idToken: idToken,
-            rawNonce: nonce
-        )
-        
-        Auth.auth().signIn(with: credential) { authResult, error in
-            if let error = error {
-                completion(nil, error.localizedDescription)
-                return
-            }
-            guard let user = authResult?.user else {
-                completion(nil, "No user returned from Apple sign in")
-                return
-            }
-            completion(user.uid, nil)
-        }
-    }
-
-    /// Link anonymous account to Apple credential
-    @objc public func linkAnonymousToApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
-        guard let currentUser = Auth.auth().currentUser, currentUser.isAnonymous else {
-            completion(nil, "No anonymous user to link")
-            return
-        }
-        
-        let credential = OAuthProvider.credential(
-            providerID: AuthProviderID.apple,
-            idToken: idToken,
-            rawNonce: nonce
-        )
-        
-        currentUser.link(with: credential) { authResult, error in
-            if let error = error {
-                completion(nil, error.localizedDescription)
-                return
-            }
-            guard let user = authResult?.user else {
-                completion(nil, "Failed to link Apple account")
-                return
-            }
-            completion(user.uid, nil)
-        }
-    }
-
     // MARK: - Firestore Player Data
 
     /// Convert data dictionary to Firestore-compatible format

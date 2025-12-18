@@ -5,6 +5,7 @@ import { getPuzzleBank, getPuzzleByIndex } from './assets';
 import { TileData, BoardSlot, DragState, GameStatus, LevelData } from './types';
 import { COLORS } from './constants';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { audioManager } from './audio/AudioManager';
 import { playerDataManager } from './data/PlayerDataManager';
@@ -18,6 +19,7 @@ import { ProfileButton } from './components/ProfileButton';
 import { SignInModal } from './components/SignInModal';
 import { handleEmailLink } from './utils/emailLinkHandler';
 import { ProSubscriptionPanel } from './components/ProSubscriptionPanel';
+import { performAppleSignIn } from './utils/appleSignIn';
 import { useRevenueCat } from './revenuecat/RevenueCatProvider';
 
 const App: React.FC = () => {
@@ -88,6 +90,8 @@ const App: React.FC = () => {
   // Authentication state
   const [authUser, setAuthUser] = useState<UserProfile | null>(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleError, setAppleError] = useState<string | null>(null);
   
   const [possibleMoves, setPossibleMoves] = useState<Record<number, string[]> | null>(null);
   const [wordHistory, setWordHistory] = useState<string[]>([]);
@@ -463,6 +467,29 @@ const App: React.FC = () => {
             firebaseSyncManager.queueSync();
         }
     }, 100);
+  };
+
+  const handleAppleSignInFromStart = async () => {
+    setAppleError(null);
+    setAppleLoading(true);
+
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Apple Sign In is only available on a device build.');
+      }
+
+      const res = await performAppleSignIn();
+      console.log('[StartScreen] Apple sign in response:', res);
+    } catch (error: any) {
+      console.error('[StartScreen] Apple sign in error:', error);
+      const msg = error?.message || 'Apple Sign In failed';
+      // Treat user cancel as non-error.
+      if (!/cancel/i.test(msg)) {
+        setAppleError(msg);
+      }
+    } finally {
+      setAppleLoading(false);
+    }
   };
 
   const handleLoadCustomPuzzle = () => {
@@ -1377,29 +1404,55 @@ const App: React.FC = () => {
   if (status === 'start_screen') {
     return (
       <div className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-center p-4">
-        <h1 className="text-5xl font-bold text-slate-800 mb-8 tracking-tight">Daily Reword</h1>
+        <h1 className="text-5xl font-bold text-slate-800 mb-6 tracking-tight">Daily Reword</h1>
         <div className="w-full max-w-xs space-y-4">
-            <button
+          {/* Apple Sign In (plugin-based, always visible here) */}
+          <button
+            onClick={handleAppleSignInFromStart}
+            disabled={appleLoading}
+            className="w-full py-3 px-4 bg-black text-white font-semibold rounded-xl hover:bg-gray-900 disabled:bg-slate-400 transition-colors flex items-center justify-center space-x-2"
+          >
+            {appleLoading ? (
+              <span>Signing in…</span>
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                </svg>
+                <span>Continue with Apple</span>
+              </>
+            )}
+          </button>
+          {appleError && (
+            <p className="text-xs text-red-600 text-center">
+              {appleError}
+            </p>
+          )}
+          <p className="text-xs text-slate-500 text-center">
+            Sign in to sync your progress across devices.
+          </p>
+
+          <button
             onClick={() => {
               triggerHaptic('light');
               handleStartGame();
             }}
             className="w-full py-4 bg-amber-500 text-white text-xl font-bold rounded-2xl shadow-lg hover:bg-amber-600 transition-transform active:scale-95"
-            >
+          >
             Start Game
-            </button>
-            <button 
-                onClick={() => {
-                  triggerHaptic('light');
-                  audioManager.initializeOnUserInteraction();
-                  audioManager.playSfx('UI_click');
-                  setIsMenuOpen(true);
-                  setShowDebug(false);
-                }}
-                className="w-full py-3 bg-white text-slate-500 font-bold rounded-xl border-2 border-slate-200"
-            >
-                Settings
-            </button>
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              audioManager.initializeOnUserInteraction();
+              audioManager.playSfx('UI_click');
+              setIsMenuOpen(true);
+              setShowDebug(false);
+            }}
+            className="w-full py-3 bg-white text-slate-500 font-bold rounded-xl border-2 border-slate-200"
+          >
+            Settings
+          </button>
         </div>
 
         {/* Start Screen Settings Overlay */}

@@ -22,8 +22,6 @@ interface FirebaseAuthPlugin {
   signUpWithEmail(options: { email: string; password: string }): Promise<{ userId: string }>;
   signInWithEmail(options: { email: string; password: string }): Promise<{ userId: string }>;
   linkAnonymousToEmail(options: { email: string; password: string }): Promise<{ userId: string; linked: boolean }>;
-  signInWithApple(options: {}): Promise<{ userId: string }>;
-  linkAnonymousToApple(options: {}): Promise<{ userId: string; linked: boolean }>;
   sendSignInLink(options: { email: string }): Promise<{ success: boolean }>;
   signInWithEmailLink(options: { email: string; link: string }): Promise<{ userId: string }>;
   linkAnonymousToEmailLink(options: { email: string; link: string }): Promise<{ userId: string; linked: boolean }>;
@@ -175,54 +173,6 @@ class AuthManager {
     } catch (error) {
       console.error('[AuthManager] Sign out failed:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Sign in with Apple
-   * If user is anonymous, automatically link the account
-   */
-  async signInWithApple(): Promise<void> {
-    try {
-      if (this.currentUser?.isAnonymous) {
-        // Link anonymous account instead of creating new one
-        console.log('[AuthManager] Linking anonymous account to Apple');
-        const result = await FirebaseAuth.linkAnonymousToApple({});
-        console.log('[AuthManager] Apple account linked successfully:', result.userId);
-        
-        // Reload user info
-        await this.loadUserInfo();
-        
-        // Trigger Firebase sync for the linked account
-        if (this.currentUser && !this.currentUser.isAnonymous) {
-          await firebaseSyncManager.performInitialSync();
-          console.log('[AuthManager] Firebase sync completed after Apple linking');
-        }
-      } else {
-        // Normal sign in
-        console.log('[AuthManager] Signing in with Apple');
-        const result = await FirebaseAuth.signInWithApple({});
-        console.log('[AuthManager] Apple sign in successful:', result.userId);
-        
-        // Reload user info
-        await this.loadUserInfo();
-        
-        // Initialize player data and sync
-        if (this.currentUser) {
-          await playerDataManager.initialize(this.currentUser.uid);
-          await firebaseSyncManager.performInitialSync();
-          firebaseSyncManager.startPeriodicSync();
-        }
-      }
-    } catch (error: any) {
-      console.error('[AuthManager] Apple sign in failed:', error);
-      
-      // Handle user cancellation gracefully
-      if (error.message?.includes('cancel') || error.message?.includes('cancelled')) {
-        throw new Error('Sign in cancelled');
-      }
-      
-      throw this.formatError(error);
     }
   }
 

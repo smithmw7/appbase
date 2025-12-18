@@ -53,19 +53,6 @@ export class FirebaseAuthPluginWeb {
     return { userId: this.mockUserId || `emaillink_${Date.now()}`, linked: true };
   }
 
-  async signInWithApple(_options: {}): Promise<{ userId: string }> {
-    console.warn('[FirebaseAuth] Web stub - mock sign in with Apple');
-    this.mockUserId = `apple_${Date.now()}`;
-    this.mockEmail = 'apple.user@privaterelay.appleid.com';
-    return { userId: this.mockUserId };
-  }
-
-  async linkAnonymousToApple(_options: {}): Promise<{ userId: string; linked: boolean }> {
-    console.warn('[FirebaseAuth] Web stub - mock link anonymous to Apple');
-    this.mockEmail = 'apple.user@privaterelay.appleid.com';
-    return { userId: this.mockUserId || `apple_${Date.now()}`, linked: true };
-  }
-
   async signOut(): Promise<{ success: boolean }> {
     console.warn('[FirebaseAuth] Web stub - mock sign out');
     this.mockUserId = null;

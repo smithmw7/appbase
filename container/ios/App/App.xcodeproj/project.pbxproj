@@ -16,7 +16,6 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		E158C10A2EEFC59700F2DC6B /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */; };
-		E15EB6492EF26CA500EC0B99 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */; };
 		E15EB64A2EF26CA500EC0B99 /* RemoteConfigPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */; };
 		E15EB64B2EF26CA500EC0B99 /* RemoteConfigPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */; };
 		E1B28CED2EEFC8ED00B7AAF4 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */; };
@@ -45,7 +44,6 @@
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		E158C1092EEFC59700F2DC6B /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		E15EB63F2EF2682000EC0B99 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
-		E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
 		E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RemoteConfigPlugin.m; sourceTree = "<group>"; };
 		E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigPlugin.swift; sourceTree = "<group>"; };
 		E1B28CEC2EEFC8ED00B7AAF4 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -102,7 +100,6 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
-				E15EB6462EF26CA500EC0B99 /* AppleSignInManager.swift */,
 				E15EB6472EF26CA500EC0B99 /* RemoteConfigPlugin.m */,
 				E15EB6482EF26CA500EC0B99 /* RemoteConfigPlugin.swift */,
 				E15EB63F2EF2682000EC0B99 /* App.entitlements */,
@@ -268,7 +265,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E15EB6492EF26CA500EC0B99 /* AppleSignInManager.swift in Sources */,
 				E15EB64A2EF26CA500EC0B99 /* RemoteConfigPlugin.m in Sources */,
 				E15EB64B2EF26CA500EC0B99 /* RemoteConfigPlugin.swift in Sources */,
 				E1B28D032F00A00000B7AAF4 /* FirebaseAuthPlugin.m in Sources */,
@@ -425,7 +421,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Daily Reword";
@@ -453,7 +449,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = SZ7UZA6225;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Daily Reword";
