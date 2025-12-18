@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { isWordValid, calculatePossibleMoves, generateNextRound } from './gameLogic';
 import { getPuzzleBank, getPuzzleByIndex } from './assets';
 import { TileData, BoardSlot, DragState, GameStatus, LevelData } from './types';
-import { COLORS } from './constants';
+import { WORD_LENGTH } from './constants';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -21,13 +21,17 @@ import { handleEmailLink } from './utils/emailLinkHandler';
 import { ProSubscriptionPanel } from './components/ProSubscriptionPanel';
 import { performAppleSignIn } from './utils/appleSignIn';
 import { useRevenueCat } from './revenuecat/RevenueCatProvider';
+// Import background via Vite/webpack asset pipeline.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - bundler will handle the image file.
+import bgImage from '../../resources/images/bg_1.png';
 
 const App: React.FC = () => {
   const { setAppUserId } = useRevenueCat();
   const [status, setStatus] = useState<GameStatus>('start_screen');
   const [currentLevel, setCurrentLevel] = useState<LevelData | null>(null);
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState<number>(0);
-  const [currentRackSize, setCurrentRackSize] = useState<number>(5);
+  const [currentRackSize] = useState<number>(5);
   const [boardSlots, setBoardSlots] = useState<BoardSlot[]>([]);
   const [rackTiles, setRackTiles] = useState<TileData[]>([]);
   const [shake, setShake] = useState(false);
@@ -382,20 +386,9 @@ const App: React.FC = () => {
   }, [status]);
 
   useEffect(() => {
-    // Ensure bank is generated for the current size
+    // Ensure bank is generated for the current (fixed) size
     getPuzzleBank(currentRackSize);
   }, [currentRackSize]);
-
-  const handleRackSizeChange = (size: number) => {
-    if (size !== currentRackSize) {
-      triggerHaptic('light');
-      setCurrentRackSize(size);
-      // If we are currently playing standard mode, reload with the new size
-      if (status !== 'start_screen' && !isEndlessMode) {
-        loadPuzzle(0, size);
-      }
-    }
-  };
 
   const handleStartGame = () => {
     triggerHaptic('light');
@@ -537,7 +530,6 @@ const App: React.FC = () => {
         setCurrentLevel(level);
         setCustomLevelData(level); // Save for persistence
         setCurrentPuzzleIndex(-1); // Indicator for custom level
-        setCurrentRackSize(cleanRack.length); 
 
         const slots: BoardSlot[] = cleanWord.split('').map((char, index) => ({
           index,
@@ -879,10 +871,9 @@ const App: React.FC = () => {
   const renderTile = (tile: TileData, isDragProxy = false) => (
     <div 
       className={`
+        tile tile--rack
         w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 
-        bg-${COLORS.primary} 
-        rounded-lg shadow-md border-b-4 border-${COLORS.primaryDark}
-        flex items-center justify-center text-2xl font-bold text-white select-none
+        flex items-center justify-center text-2xl select-none
         ${isDragProxy ? 'opacity-90 scale-110 z-50 fixed pointer-events-none' : 'cursor-grab active:cursor-grabbing'}
       `}
       style={isDragProxy ? { 
@@ -891,7 +882,9 @@ const App: React.FC = () => {
         transform: 'translate(-50%, -50%)' 
       } : {}}
     >
-      {tile.char}
+      <span className="tile-letter tile-letter--rack">
+        {tile.char}
+      </span>
     </div>
   );
 
@@ -1245,30 +1238,6 @@ const App: React.FC = () => {
             </div>
 
             <div className="bg-white p-3 rounded-lg border border-purple-100">
-              <h4 className="font-bold text-purple-700 mb-2">Rack Size</h4>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => {
-                    handleRackSizeChange(5);
-                    audioManager.playSfx('UI_click');
-                  }}
-                  className={`flex-1 py-2 rounded border font-bold transition-colors ${currentRackSize === 5 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
-                >
-                  5 Tiles
-                </button>
-                <button 
-                  onClick={() => {
-                    handleRackSizeChange(7);
-                    audioManager.playSfx('UI_click');
-                  }}
-                  className={`flex-1 py-2 rounded border font-bold transition-colors ${currentRackSize === 7 ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-600 border-slate-200'}`}
-                >
-                  7 Tiles
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-lg border border-purple-100">
               <h4 className="font-bold text-purple-700 mb-2">Create Custom Puzzle</h4>
               <div className="space-y-3">
                 <div>
@@ -1507,10 +1476,9 @@ const App: React.FC = () => {
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-between py-8 px-4 no-touch-action select-none"
-    >
+    <div ref={containerRef} className="game-root no-touch-action select-none">
+      <div className="game-bg" style={{ backgroundImage: `url(${bgImage})` }} />
+      <div className="game-content">
       {/* In-Game Settings Overlay */}
       {isMenuOpen && (
         <>
@@ -1563,7 +1531,7 @@ const App: React.FC = () => {
       )}
 
       {/* Header / HUD */}
-      <div className="w-full max-w-md flex justify-between items-center mb-4 relative z-10" style={{ marginTop: '40px' }}>
+      <div className="w-full max-w-md flex justify-between items-center mb-4 relative z-10" style={{ marginTop: '24px' }}>
         <button 
           onClick={() => {
             triggerHaptic('light');
@@ -1674,13 +1642,13 @@ const App: React.FC = () => {
               key={slot.index}
               data-slot-index={slot.index}
               className={`
+                board-slot
+                ${slot.stagedTile ? 'board-slot--staged' : ''}
                 w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
-                rounded-xl border-2 transition-colors duration-200
                 flex items-center justify-center relative
-                ${slot.stagedTile ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'}
               `}
             >
-              <span className={`text-3xl font-bold text-slate-300 ${slot.stagedTile ? 'opacity-0' : 'opacity-100'}`}>
+              <span className={`board-slot-letter text-3xl ${slot.stagedTile ? 'opacity-0' : 'opacity-100'}`}>
                 {slot.lockedChar}
               </span>
 
@@ -1691,12 +1659,14 @@ const App: React.FC = () => {
                   onTouchStart={(e) => handleDragStart(e, slot.stagedTile!, 'board', slot.index)}
                 >
                   <div className={`
-                    w-full h-full bg-${COLORS.primary} 
-                    rounded-lg shadow-sm border-b-4 border-${COLORS.primaryDark}
-                    flex items-center justify-center text-2xl font-bold text-white cursor-grab
+                    tile tile--board
+                    w-full h-full
+                    flex items-center justify-center text-2xl cursor-grab
                     ${dragState.isDragging && dragState.source?.type === 'board' && dragState.source.index === slot.index ? 'opacity-0' : 'opacity-100'}
                   `}>
-                    {slot.stagedTile.char}
+                    <span className="tile-letter tile-letter--board">
+                      {slot.stagedTile.char}
+                    </span>
                   </div>
                 </div>
               )}
@@ -1705,13 +1675,10 @@ const App: React.FC = () => {
         </div>
 
         {/* Rack */}
-        <div 
-          className="w-full bg-slate-200 rounded-2xl p-4 min-h-[5rem] flex items-center justify-center"
-          data-rack-area="true"
-        >
-          <div className="flex flex-wrap justify-center gap-2">
+        <div className="w-full flex items-center justify-center" data-rack-area="true">
+          <div className="rack-row">
             {rackTiles.map((tile, i) => (
-              <div 
+              <div
                 key={tile.id}
                 onMouseDown={(e) => handleDragStart(e, tile, 'rack', i)}
                 onTouchStart={(e) => handleDragStart(e, tile, 'rack', i)}
@@ -1720,46 +1687,89 @@ const App: React.FC = () => {
                 {renderTile(tile)}
               </div>
             ))}
-            {rackTiles.length === 0 && status === 'playing' && (
-              <span className="text-slate-400 italic font-medium">Rack empty! Submit to win.</span>
-            )}
+            {Array.from({ length: Math.max(0, WORD_LENGTH - rackTiles.length) }).map((_, idx) => (
+              <div
+                key={`placeholder-${idx}`}
+                className="tile tile--placeholder w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16"
+              />
+            ))}
           </div>
         </div>
 
       </div>
 
       {/* Controls */}
-      <div className="w-full max-w-md flex gap-4 mt-auto pt-8">
-        <button 
+      <div className="controls-row mt-6">
+        <button
           onClick={handleUndo}
           disabled={!boardSlots.some(s => s.stagedTile) || undoJustUsed}
-          className="flex-1 py-4 rounded-xl bg-slate-200 text-slate-600 font-bold uppercase tracking-wider disabled:opacity-50 active:bg-slate-300 transition-colors"
+          className="controls-icon-btn"
+          aria-label="Undo move"
         >
-          Undo
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M7 7L4 10L7 13"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M5 10H13C16.3137 10 19 12.6863 19 16V17"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
-        <button 
-          onClick={handleShuffle}
-          disabled={rackTiles.length < 2}
-          className="flex-1 py-4 rounded-xl bg-slate-200 text-slate-600 font-bold uppercase tracking-wider disabled:opacity-50 active:bg-slate-300 transition-colors"
-        >
-          Shuffle
-        </button>
-        <button 
+        <button
           onClick={handleSubmit}
           disabled={!boardSlots.some(s => s.stagedTile)}
-          className={`
-            flex-[2] py-4 rounded-xl text-white font-bold uppercase tracking-wider shadow-lg transition-all
-            ${boardSlots.some(s => s.stagedTile) ? 'bg-green-500 active:bg-green-600 transform active:scale-95' : 'bg-slate-300 cursor-not-allowed'}
-          `}
+          className="controls-submit-btn"
         >
           Submit
+        </button>
+        <button
+          onClick={handleShuffle}
+          disabled={rackTiles.length < 2}
+          className="controls-icon-btn"
+          aria-label="Shuffle rack tiles"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M4 7H7.5C9.433 7 11 8.567 11 10.5C11 12.433 12.567 14 14.5 14H20"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M16 5L20 7L16 9"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M4 17H9.5C11.433 17 13 15.433 13 13.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M18 15L20 17L18 19"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </div>
 
       {dragState.isDragging && dragState.tile && renderTile(dragState.tile, true)}
 
       {status === 'loading' && (
-        <div className="absolute inset-0 bg-slate-50 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 z-50 flex items-center justify-center">
           <div className="flex flex-col items-center">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-slate-500 font-medium">Loading Puzzle #{currentPuzzleIndex === -1 ? 'Custom' : currentPuzzleIndex + 1}...</p>
@@ -1774,6 +1784,7 @@ const App: React.FC = () => {
         isAnonymous={authUser?.isAnonymous ?? true}
         userEmail={authUser?.email ?? null}
       />
+      </div>
     </div>
   );
 };

@@ -26,6 +26,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
+  const [appleError, setAppleError] = useState<string | null>(null);
   const [emailLinkSent, setEmailLinkSent] = useState(false);
 
   // Official Capacitor approach:
@@ -52,6 +53,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     setPassword('');
     setConfirmPassword('');
     setError('');
+    setAppleError(null);
     setEmailLinkSent(false);
     onClose();
   };
@@ -91,6 +93,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   // Apple Sign In
   const handleAppleSignIn = async () => {
     setError('');
+    setAppleError(null);
     setAppleLoading(true);
 
     try {
@@ -105,9 +108,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       handleClose();
     } catch (error: any) {
       console.error('[SignInModal] Apple sign in error:', error);
-      if (error?.message !== 'The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1000.)' &&
-          error?.message !== 'Sign in cancelled') {
-        setError(error.message || 'Apple sign in failed');
+      const msg = error?.message || 'Apple Sign In failed';
+      // Treat user cancellation-style errors as non-fatal.
+      if (!/cancel/i.test(msg) && !/AuthorizationError error 1000/i.test(msg)) {
+        setAppleError(msg);
       }
     } finally {
       setAppleLoading(false);
@@ -342,6 +346,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   </>
                 )}
               </button>
+
+              {appleError && (
+                <p className="mb-3 text-xs text-red-600 text-center">
+                  {appleError}
+                </p>
+              )}
 
               {/* Google Placeholder Button - Show for all users on email step */}
               <button

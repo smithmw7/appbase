@@ -2,6 +2,199 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global theme tokens */
+:root {
+  --ui-brown: #9b5a3c;
+  --ui-brown-dark: #6e3824;
+  --ui-cream: #ffe8d8;
+  --ui-cream-dark: #d9b7a0;
+  --ui-submit: #f6af7a;
+  --ui-submit-dark: #d07d3f;
+  --ui-submit-text: #ab5b31;
+  --ui-text-main: #ffffff;
+  --ui-text-rack: #7c4630;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Gameplay layout & background */
+.game-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.game-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.game-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.2) 25%,
+    rgba(0, 0, 0, 0.25) 55%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+.game-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 430px;
+  padding: 32px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (min-height: 700px) {
+  .game-content {
+    padding-top: 40px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Tile styles */
+.tile {
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.25);
+}
+
+.tile--rack {
+  background: var(--ui-cream);
+  border-bottom: 4px solid var(--ui-cream-dark);
+}
+
+.tile--board {
+  background: rgba(92, 55, 35, 0.98);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+.tile--placeholder {
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+}
+
+.tile-letter {
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.tile-letter--rack {
+  color: var(--ui-text-rack);
+}
+
+.tile-letter--board {
+  color: var(--ui-text-main);
+}
+
+.board-slot {
+  position: relative;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.board-slot--staged {
+  background: transparent;
+  border-color: transparent;
+}
+
+.board-slot-letter {
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Rack row */
+.rack-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Controls */
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 430px;
+  gap: 16px;
+}
+
+.controls-icon-btn {
+  flex: 0 0 64px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--ui-cream);
+  border: none;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ui-text-rack);
+}
+
+.controls-icon-btn:disabled {
+  opacity: 0.45;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+
+.controls-icon-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.22);
+}
+
+.controls-submit-btn {
+  flex: 1 1 auto;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--ui-submit);
+  border: none;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.28);
+  font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-submit-text);
+}
+
+.controls-submit-btn:disabled {
+  background: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.38);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
+}
+
+.controls-submit-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
+}
+
 /* Slide-up animation for modal */
 @keyframes slide-up {
   from {

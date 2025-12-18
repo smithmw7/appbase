@@ -260,7 +260,7 @@ public class FirebaseAuthPlugin: CAPPlugin, CAPBridgedPlugin {
             } else {
                 call.reject("Failed to link account")
             }
-        }
+        }                                                           
     }
 
 }
