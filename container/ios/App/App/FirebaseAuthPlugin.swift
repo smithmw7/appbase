@@ -8,7 +8,34 @@ import FirebaseFirestore
  * Exposes FirebaseManager authentication and Firestore methods to JavaScript
  */
 @objc(FirebaseAuthPlugin)
-public class FirebaseAuthPlugin: CAPPlugin {
+public class FirebaseAuthPlugin: CAPPlugin, CAPBridgedPlugin {
+
+    // Capacitor 7 custom plugin registration (docs):
+    // https://capacitorjs.com/docs/ios/custom-code
+    public let identifier = "FirebaseAuth"
+    public let jsName = "FirebaseAuth"
+    public let pluginMethods: [CAPPluginMethod] = [
+        // Auth
+        CAPPluginMethod(name: "signInAnonymously", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getCurrentUserId", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signUpWithEmail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signInWithEmail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "linkAnonymousToEmail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendSignInLink", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signInWithEmailLink", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "linkAnonymousToEmailLink", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendPasswordReset", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "fetchSignInMethods", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getUserInfo", returnType: CAPPluginReturnPromise),
+        // Apple
+        CAPPluginMethod(name: "signInWithApple", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "linkAnonymousToApple", returnType: CAPPluginReturnPromise),
+        // Firestore player data
+        CAPPluginMethod(name: "savePlayerData", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "loadPlayerData", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncPlayerData", returnType: CAPPluginReturnPromise),
+    ]
 
     // MARK: - Authentication
 

@@ -21,6 +21,9 @@ const config: CapacitorConfig = {
     limitsNavigationsToAppBoundDomains: false,
   },
   plugins: {
+    Keyboard: {
+      resize: 'none',  // Prevents iOS viewport resize when keyboard appears
+    },
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,

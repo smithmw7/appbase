@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { authManager } from '../data/AuthManager';
 
 interface SignInModalProps {
@@ -25,26 +27,19 @@ export const SignInModal: React.FC<SignInModalProps> = ({
   const [appleLoading, setAppleLoading] = useState(false);
   const [emailLinkSent, setEmailLinkSent] = useState(false);
 
-  // Prevent body scroll when modal is open
-  React.useEffect(() => {
+  // Official Capacitor approach:
+  // - Disable viewport resizing when the keyboard appears (Keyboard.resize = 'none' in capacitor.config.ts)
+  // - Disable native WebView scrolling while this modal is open so iOS can't scroll the page to "reveal" inputs.
+  useEffect(() => {
     if (!isOpen) return;
-    
-    // Lock body scroll and prevent iOS viewport shift
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    const originalPosition = window.getComputedStyle(document.body).position;
-    const scrollY = window.scrollY;
-    
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    
+    if (!Capacitor.isNativePlatform()) return;
+
+    // iOS-only; safe no-op elsewhere.
+    void Keyboard.setResizeMode({ mode: KeyboardResize.None });
+    void Keyboard.setScroll({ isDisabled: true });
+
     return () => {
-      document.body.style.overflow = originalStyle;
-      document.body.style.position = originalPosition;
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, scrollY);
+      void Keyboard.setScroll({ isDisabled: false });
     };
   }, [isOpen]);
 
@@ -245,24 +240,24 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         className="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl animate-slide-up"
         style={{
           position: 'fixed',
+          top: 0,
           bottom: 0,
           left: 0,
           right: 0,
           maxWidth: '512px',
           margin: '0 auto',
-          paddingTop: 'calc(env(safe-area-inset-top) + 90px)',
-          height: 'calc(100vh - env(safe-area-inset-top) - 16px)',
-          maxHeight: 'calc(100vh - env(safe-area-inset-top) - 16px)',
+          // Fill the screen so no game UI shows behind.
+          height: '100vh',
+          maxHeight: '100vh',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          touchAction: 'none',
         }}
-        onTouchMove={(e) => e.preventDefault()}
       >
         {/* Header */}
         <div
           className="bg-white border-b border-slate-200 flex-shrink-0"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="px-6 py-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800">
@@ -284,7 +279,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
 
         {/* Content */}
         <div 
-          className="p-6 pb-8 flex-1"
+          className="px-6 pt-4 pb-6 flex-1"
           style={{
             overflow: 'hidden',
             overscrollBehavior: 'contain',
@@ -325,12 +320,11 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           {step === 'email' && (
             <div>
               {/* Apple Sign In Button - Show for all users on email step */}
-              {isAnonymous && (
-                <button
-                  onClick={handleAppleSignIn}
-                  disabled={appleLoading || loading}
-                  className="w-full py-3 px-4 bg-black text-white font-medium rounded-xl hover:bg-gray-900 disabled:bg-slate-300 transition-colors flex items-center justify-center space-x-2 mb-3"
-                >
+              <button
+                onClick={handleAppleSignIn}
+                disabled={appleLoading || loading}
+                className="w-full py-3 px-4 bg-black text-white font-medium rounded-xl hover:bg-gray-900 disabled:bg-slate-300 transition-colors flex items-center justify-center space-x-2 mb-3"
+              >
                 {appleLoading ? (
                   <span>Signing in...</span>
                 ) : (
@@ -342,14 +336,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                   </>
                 )}
               </button>
-              )}
 
               {/* Google Placeholder Button - Show for all users on email step */}
-              {isAnonymous && (
               <button
                 onClick={handleGoogleSignIn}
                 disabled={loading || appleLoading}
-                className="w-full py-3 px-4 bg-white text-slate-800 font-medium rounded-xl border-2 border-slate-300 hover:bg-slate-50 disabled:bg-slate-100 transition-colors flex items-center justify-center space-x-2 mb-6"
+                className="w-full py-3 px-4 bg-white text-slate-800 font-medium rounded-xl border-2 border-slate-300 hover:bg-slate-50 disabled:bg-slate-100 transition-colors flex items-center justify-center space-x-2 mb-4"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -359,10 +351,9 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </svg>
                 <span>Continue with Google</span>
               </button>
-              )}
 
               {/* Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-300"></div>
                 </div>
@@ -389,7 +380,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                       placeholder=""
                       required
                       disabled={loading || appleLoading}
-                      autoFocus
+                      // Do NOT autoFocus on iOS; focusing an input can cause the WebView
+                      // to scroll the page to reveal the field (hides top buttons).
                     />
                   </div>
 
@@ -409,11 +401,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </div>
               </form>
 
-              <p className="mt-4 text-xs text-slate-500 text-center">
-                By continuing, you agree to the{' '}
-                <a href="#" className="underline">Terms of Sale</a>,{' '}
-                <a href="#" className="underline">Terms of Service</a>, and{' '}
-                <a href="#" className="underline">Privacy Policy</a>.
+              <p className="mt-3 text-[10px] text-slate-500 text-center whitespace-nowrap overflow-hidden text-ellipsis">
+                By continuing, you agree to <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy</a>.
               </p>
             </div>
           )}
@@ -490,11 +479,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({
                 </div>
               </form>
 
-              <p className="mt-4 text-xs text-slate-500 text-center">
-                By creating an account, you agree to the{' '}
-                <a href="#" className="underline">Terms of Sale</a>,{' '}
-                <a href="#" className="underline">Terms of Service</a>, and{' '}
-                <a href="#" className="underline">Privacy Policy</a>.
+              <p className="mt-3 text-[10px] text-slate-500 text-center whitespace-nowrap overflow-hidden text-ellipsis">
+                By creating an account, you agree to <a href="#" className="underline">Terms</a> & <a href="#" className="underline">Privacy</a>.
               </p>
             </div>
           )}

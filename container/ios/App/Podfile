@@ -16,6 +16,7 @@ def capacitor_pods
   pod 'CapacitorApp', :path => '../../../node_modules/@capacitor/app'
   pod 'CapacitorDevice', :path => '../../../node_modules/@capacitor/device'
   pod 'CapacitorHaptics', :path => '../../../node_modules/@capacitor/haptics'
+  pod 'CapacitorKeyboard', :path => '../../../node_modules/@capacitor/keyboard'
   pod 'CapacitorPreferences', :path => '../../../node_modules/@capacitor/preferences'
   pod 'RevenuecatPurchasesCapacitor', :path => '../../node_modules/@revenuecat/purchases-capacitor'
   pod 'RevenuecatPurchasesCapacitorUi', :path => '../../../node_modules/@revenuecat/purchases-capacitor-ui'
