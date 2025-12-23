@@ -29,6 +29,9 @@ interface FirebaseAuthPlugin {
   getUserInfo(): Promise<{ userInfo: any | null }>;
   sendPasswordReset(options: { email: string }): Promise<{ success: boolean }>;
   fetchSignInMethods(options: { email: string }): Promise<{ methods: string[] }>;
+  signInWithApple(options: { idToken: string; nonce: string }): Promise<{ userId: string }>;
+  linkAnonymousToApple(options: { idToken: string; nonce: string }): Promise<{ userId: string; linked: boolean }>;
+  linkAccountToApple(options: { idToken: string; nonce: string }): Promise<{ userId: string; linked: boolean }>;
 }
 
 const FirebaseAuth = registerPlugin<FirebaseAuthPlugin>('FirebaseAuth', {
@@ -250,6 +253,87 @@ class AuthManager {
   }
 
   /**
+   * Sign in with Apple
+   * If user is anonymous, automatically link the account
+   * If credential is already in use, sign in with that account instead
+   */
+  async signInWithApple(idToken: string, nonce: string): Promise<void> {
+    try {
+      if (this.currentUser?.isAnonymous) {
+        // Link anonymous account
+        console.log('[AuthManager] Linking anonymous account to Apple');
+        const result = await FirebaseAuth.linkAnonymousToApple({ idToken, nonce });
+        console.log('[AuthManager] Account linked to Apple:', result.userId);
+        
+        await this.loadUserInfo();
+        
+        if (this.currentUser && !this.currentUser.isAnonymous) {
+          await firebaseSyncManager.performInitialSync();
+          console.log('[AuthManager] Firebase sync completed after Apple linking');
+        }
+      } else {
+        // New sign in with Apple
+        console.log('[AuthManager] Signing in with Apple');
+        const result = await FirebaseAuth.signInWithApple({ idToken, nonce });
+        console.log('[AuthManager] Signed in with Apple:', result.userId);
+        
+        await this.loadUserInfo();
+        
+        if (this.currentUser) {
+          await playerDataManager.initialize(this.currentUser.uid);
+          await firebaseSyncManager.performInitialSync();
+          firebaseSyncManager.startPeriodicSync();
+        }
+      }
+    } catch (error: any) {
+      console.error('[AuthManager] Apple sign in failed:', error);
+      
+      // Handle credential already in use - sign in with that account instead
+      const errorCode = error.code || error.message || '';
+      if (errorCode.includes('credential-already-in-use') || errorCode.includes('17025')) {
+        console.log('[AuthManager] Credential already in use, signing in with existing account');
+        try {
+          const result = await FirebaseAuth.signInWithApple({ idToken, nonce });
+          console.log('[AuthManager] Signed in with existing Apple account:', result.userId);
+          
+          await this.loadUserInfo();
+          
+          if (this.currentUser) {
+            await playerDataManager.initialize(this.currentUser.uid);
+            await firebaseSyncManager.performInitialSync();
+            firebaseSyncManager.startPeriodicSync();
+          }
+        } catch (signInError: any) {
+          console.error('[AuthManager] Failed to sign in with existing account:', signInError);
+          throw this.formatError(signInError);
+        }
+      } else {
+        throw this.formatError(error);
+      }
+    }
+  }
+
+  /**
+   * Link Apple credential to existing authenticated account (not anonymous)
+   */
+  async linkAccountToApple(idToken: string, nonce: string): Promise<void> {
+    try {
+      if (!this.currentUser || this.currentUser.isAnonymous) {
+        throw new Error('Cannot link Apple to anonymous account. Use signInWithApple instead.');
+      }
+      
+      console.log('[AuthManager] Linking Apple to existing account');
+      const result = await FirebaseAuth.linkAccountToApple({ idToken, nonce });
+      console.log('[AuthManager] Apple linked successfully:', result.userId);
+      
+      await this.loadUserInfo();
+    } catch (error: any) {
+      console.error('[AuthManager] Failed to link Apple account:', error);
+      throw this.formatError(error);
+    }
+  }
+
+  /**
    * Check if email is already registered
    */
   async checkEmailExists(email: string): Promise<boolean> {
@@ -326,7 +410,7 @@ class AuthManager {
       'auth/too-many-requests': 'Too many attempts. Please try again later',
       'auth/network-request-failed': 'Network error. Check your connection',
       'auth/invalid-credential': 'Invalid email or password',
-      'auth/credential-already-in-use': 'This account is already linked to another user',
+      'auth/credential-already-in-use': 'This Apple account is already linked. Signing you in...',
       'auth/provider-already-linked': 'This Apple account is already linked',
       'Sign in cancelled': 'Sign in cancelled',
     };

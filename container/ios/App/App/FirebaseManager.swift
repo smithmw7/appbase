@@ -238,13 +238,17 @@ import FirebaseFirestore
             return nil
         }
         
+        // Extract provider IDs from user's providerData
+        let providers = user.providerData.map { $0.providerID }
+        
         return [
             "uid": user.uid,
             "email": user.email ?? "",
             "isAnonymous": user.isAnonymous,
             "emailVerified": user.isEmailVerified,
             "displayName": user.displayName ?? "",
-            "photoURL": user.photoURL?.absoluteString ?? ""
+            "photoURL": user.photoURL?.absoluteString ?? "",
+            "providers": providers
         ]
     }
 
@@ -316,6 +320,88 @@ import FirebaseFirestore
         
         currentUser.link(with: credential) { authResult, error in
             if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "Failed to link account")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    // MARK: - Apple Sign In
+
+    /// Sign in with Apple credential
+    @objc public func signInWithApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
+        let provider = OAuthProvider(providerID: "apple.com")
+        let credential = provider.credential(withIDToken: idToken, rawNonce: nonce)
+        
+        Auth.auth().signIn(with: credential) { authResult, error in
+            if let error = error {
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "No user returned")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Link anonymous account to Apple credential
+    @objc public func linkAnonymousToApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
+        guard let currentUser = Auth.auth().currentUser, currentUser.isAnonymous else {
+            completion(nil, "No anonymous user to link")
+            return
+        }
+        
+        let provider = OAuthProvider(providerID: "apple.com")
+        let credential = provider.credential(withIDToken: idToken, rawNonce: nonce)
+        
+        currentUser.link(with: credential) { authResult, error in
+            if let error = error {
+                // If credential is already in use, try signing in with it instead
+                if let nsError = error as NSError?, nsError.domain == "FIRAuthErrorDomain", nsError.code == 17025 {
+                    // Error 17025 = FIRAuthErrorCodeCredentialAlreadyInUse
+                    // Sign in with the credential to retrieve the existing account
+                    Auth.auth().signIn(with: credential) { signInResult, signInError in
+                        if let signInError = signInError {
+                            completion(nil, signInError.localizedDescription)
+                        } else if let user = signInResult?.user {
+                            completion(user.uid, nil)
+                        } else {
+                            completion(nil, "Failed to sign in with existing account")
+                        }
+                    }
+                    return
+                }
+                completion(nil, error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                completion(nil, "Failed to link account")
+                return
+            }
+            completion(user.uid, nil)
+        }
+    }
+
+    /// Link Apple credential to existing authenticated account
+    @objc public func linkAccountToApple(idToken: String, nonce: String, completion: @escaping (String?, String?) -> Void) {
+        guard let currentUser = Auth.auth().currentUser, !currentUser.isAnonymous else {
+            completion(nil, "No authenticated user to link")
+            return
+        }
+        
+        let provider = OAuthProvider(providerID: "apple.com")
+        let credential = provider.credential(withIDToken: idToken, rawNonce: nonce)
+        
+        currentUser.link(with: credential) { authResult, error in
+            if let error = error {
+                // If credential is already in use, return error (don't auto-sign-in for existing accounts)
                 completion(nil, error.localizedDescription)
                 return
             }

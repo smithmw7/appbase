@@ -104,7 +104,19 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       const res = await performAppleSignIn();
       console.log('[SignInModal] Apple sign in response:', res);
 
-      // TODO: later, wire this into Firebase account linking.
+      // Extract identityToken + raw nonce for Firebase
+      // @capacitor-community/apple-sign-in returns `response.identityToken` (JWT).
+      if (!res.response?.identityToken) {
+        throw new Error('Apple Sign In did not return an identityToken');
+      }
+
+      const idToken = res.response.identityToken;
+      const nonce = res.nonce;
+
+      // Sign in or link with Firebase
+      await authManager.signInWithApple(idToken, nonce);
+      console.log('[SignInModal] Apple authentication successful');
+      
       handleClose();
     } catch (error: any) {
       console.error('[SignInModal] Apple sign in error:', error);

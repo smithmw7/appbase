@@ -473,11 +473,24 @@ const App: React.FC = () => {
 
       const res = await performAppleSignIn();
       console.log('[StartScreen] Apple sign in response:', res);
+
+      // Extract identityToken + raw nonce for Firebase
+      // @capacitor-community/apple-sign-in returns `response.identityToken` (JWT).
+      if (!res.response?.identityToken) {
+        throw new Error('Apple Sign In did not return an identityToken');
+      }
+
+      const idToken = res.response.identityToken;
+      const nonce = res.nonce;
+
+      // Sign in or link with Firebase
+      await authManager.signInWithApple(idToken, nonce);
+      console.log('[StartScreen] Apple authentication successful');
     } catch (error: any) {
       console.error('[StartScreen] Apple sign in error:', error);
       const msg = error?.message || 'Apple Sign In failed';
       // Treat user cancel as non-error.
-      if (!/cancel/i.test(msg)) {
+      if (!/cancel/i.test(msg) && !/AuthorizationError error 1000/i.test(msg)) {
         setAppleError(msg);
       }
     } finally {
@@ -1136,7 +1149,23 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Status:</span>
-                  <span>{authUserId ? '✅ Signed In' : '❌ Not signed in'}</span>
+                  <span>{authUserId ? (authUser?.isAnonymous ? '🔒 Anonymous' : '✅ Signed In') : '❌ Not signed in'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Email:</span>
+                  <span>{authUser?.email || 'Not set'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Email Verified:</span>
+                  <span>{authUser?.emailVerified ? '✅ Yes' : '❌ No'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Display Name:</span>
+                  <span>{authUser?.displayName || 'Not set'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Is Anonymous:</span>
+                  <span>{authUser?.isAnonymous ? 'Yes' : 'No'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Last Sync:</span>

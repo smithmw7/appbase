@@ -29,6 +29,9 @@ public class FirebaseAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getUserInfo", returnType: CAPPluginReturnPromise),
         // Apple
+        CAPPluginMethod(name: "signInWithApple", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "linkAnonymousToApple", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "linkAccountToApple", returnType: CAPPluginReturnPromise),
         // Firestore player data
         CAPPluginMethod(name: "savePlayerData", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "loadPlayerData", returnType: CAPPluginReturnPromise),
@@ -261,6 +264,62 @@ public class FirebaseAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject("Failed to link account")
             }
         }                                                           
+    }
+
+    // MARK: - Apple Sign In
+
+    @objc func signInWithApple(_ call: CAPPluginCall) {
+        guard let idToken = call.getString("idToken"),
+              let nonce = call.getString("nonce") else {
+            call.reject("idToken and nonce are required")
+            return
+        }
+        
+        FirebaseManager.shared.signInWithApple(idToken: idToken, nonce: nonce) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId])
+            } else {
+                call.reject("Failed to sign in with Apple")
+            }
+        }
+    }
+
+    @objc func linkAnonymousToApple(_ call: CAPPluginCall) {
+        guard let idToken = call.getString("idToken"),
+              let nonce = call.getString("nonce") else {
+            call.reject("idToken and nonce are required")
+            return
+        }
+        
+        FirebaseManager.shared.linkAnonymousToApple(idToken: idToken, nonce: nonce) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId, "linked": true])
+            } else {
+                call.reject("Failed to link account")
+            }
+        }
+    }
+
+    @objc func linkAccountToApple(_ call: CAPPluginCall) {
+        guard let idToken = call.getString("idToken"),
+              let nonce = call.getString("nonce") else {
+            call.reject("idToken and nonce are required")
+            return
+        }
+        
+        FirebaseManager.shared.linkAccountToApple(idToken: idToken, nonce: nonce) { userId, error in
+            if let error = error {
+                call.reject(error)
+            } else if let userId = userId {
+                call.resolve(["userId": userId, "linked": true])
+            } else {
+                call.reject("Failed to link account")
+            }
+        }
     }
 
 }

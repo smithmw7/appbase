@@ -1,7 +1,12 @@
 {
 	"folders": [
 		{
+			"name": "App",
 			"path": "."
+		},
+		{
+			"name": "Puzzle Builder",
+			"path": "../Puzzle Builder"
 		}
 	],
 	"settings": {

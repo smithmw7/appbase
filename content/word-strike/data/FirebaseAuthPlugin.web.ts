@@ -86,6 +86,18 @@ export class FirebaseAuthPluginWeb {
     return { methods: [] };
   }
 
+  async signInWithApple(_options: { idToken: string; nonce: string }): Promise<{ userId: string }> {
+    throw new Error('Apple Sign In is only available on a native device.');
+  }
+
+  async linkAnonymousToApple(_options: { idToken: string; nonce: string }): Promise<{ userId: string; linked: boolean }> {
+    throw new Error('Apple Sign In is only available on a native device.');
+  }
+
+  async linkAccountToApple(_options: { idToken: string; nonce: string }): Promise<{ userId: string; linked: boolean }> {
+    throw new Error('Apple Sign In is only available on a native device.');
+  }
+
   async savePlayerData(): Promise<{ success: boolean }> {
     console.warn('[FirebaseAuth] Web stub - savePlayerData not implemented');
     return { success: true };
